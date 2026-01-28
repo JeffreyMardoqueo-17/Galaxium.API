@@ -1,0 +1,6 @@
+@Galaxium.Api_HostAddress = http://localhost:5213
+
+GET {{Galaxium.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
