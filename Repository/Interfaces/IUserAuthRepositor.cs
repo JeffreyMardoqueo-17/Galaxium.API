@@ -10,7 +10,8 @@ namespace Galaxium.API.Repository.Interfaces
     {
 
         Task<User> CreateUserAsync(User newUser);
-        Task<User> AuthenticateUserAsync(string username, string password);
+        Task<User?> AuthenticateUserAsync(string username);
+
         
     }
 }

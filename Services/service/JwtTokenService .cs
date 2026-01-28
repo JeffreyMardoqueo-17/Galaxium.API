@@ -37,6 +37,12 @@ namespace Galaxium.API.Services.Service
         /// <returns>Serialized JWT access token.</returns>
         public string GenerateAccessToken(User user)
         {
+
+            if (user == null)
+                throw new ArgumentNullException(nameof(user));
+            if (user.Role == null)
+                throw new InvalidOperationException("User role is not loaded.");
+
             var claims = new List<Claim>
             {
                 // Subject: User ID

@@ -28,8 +28,16 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 // Registrar servicios, repositorios y servicios de autenticación
 builder.Services.AddScoped<IRoleRespository, RolRepository>();
 builder.Services.AddScoped<IRoleService, RoleService>();
-builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+builder.Services.AddScoped<IUserRepository, UserRepository>(); // Si usas para consultas generales de usuarios
+builder.Services.AddScoped<IUserAuthRepository, UserAuthRepository>(); // Para creación y login
+
+builder.Services.AddScoped<IUserAuthService, UserAuthService>();
+
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
+
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>(); // Para guardar tokens refresh
+
 
 builder.Services.AddControllers();
 
