@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Threading.Tasks;
 using Galaxium.API.Entities;
 using Galaxium.API.Repository.Interfaces;
@@ -13,7 +14,7 @@ namespace Galaxium.API.Services.Service
         private readonly IJwtTokenService _jwtTokenService;
 
         public UserAuthService(
-            IUserAuthRepository userRepository, 
+            IUserAuthRepository userRepository,
             IRefreshTokenRepository refreshTokenRepository,
             IJwtTokenService jwtTokenService)
         {
@@ -30,7 +31,8 @@ namespace Galaxium.API.Services.Service
             return await _userRepository.CreateUserAsync(newUser);
         }
 
-        public async Task<(string accessToken, string refreshToken)?> AuthenticateUserAsync(string username, string password)
+        public async Task<(User user, string accessToken, string refreshToken)?>
+  AuthenticateUserAsync(string username, string password)
         {
             var user = await _userRepository.AuthenticateUserAsync(username);
             if (user == null) return null;
@@ -41,10 +43,54 @@ namespace Galaxium.API.Services.Service
             var accessToken = _jwtTokenService.GenerateAccessToken(user);
             var refreshTokenEntity = _jwtTokenService.GenerateRefreshToken(user.Id);
 
-            // Guardar refresh token en base de datos
             await _refreshTokenRepository.AddAsync(refreshTokenEntity);
 
-            return (accessToken, refreshTokenEntity.Token);
+            return (user, accessToken, refreshTokenEntity.Token);
         }
+
+        //otros metodos para que funcione el login 
+        public async Task<(string accessToken, string refreshToken)?> RefreshTokenAsync(
+    string expiredAccessToken,
+    string refreshToken
+)
+        {
+            var principal = _jwtTokenService.GetPrincipalFromExpiredToken(expiredAccessToken);
+            if (principal == null)
+                return null;
+
+            var userId = int.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            var storedToken = await _refreshTokenRepository.GetByTokenAsync(refreshToken);
+
+            if (storedToken == null ||
+                storedToken.IsRevoked ||
+                storedToken.ExpiresAt < DateTime.UtcNow ||
+                storedToken.UserId != userId)
+            {
+                return null;
+            }
+
+            // Revocar token viejo
+            storedToken.IsRevoked = true;
+            await _refreshTokenRepository.UpdateAsync(storedToken);
+
+            // Crear nuevos
+            var user = storedToken.User!;
+            var newAccessToken = _jwtTokenService.GenerateAccessToken(user);
+            var newRefreshToken = _jwtTokenService.GenerateRefreshToken(user.Id);
+
+            await _refreshTokenRepository.AddAsync(newRefreshToken);
+
+            return (newAccessToken, newRefreshToken.Token);
+        }
+        public async Task RevokeRefreshTokenAsync(string refreshToken)
+        {
+            var token = await _refreshTokenRepository.GetByTokenAsync(refreshToken);
+            if (token == null) return;
+
+            token.IsRevoked = true;
+            await _refreshTokenRepository.UpdateAsync(token);
+        }
+
     }
 }

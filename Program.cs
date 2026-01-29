@@ -23,30 +23,41 @@ builder.Services.AddDbContext<GalaxiumDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+
+// AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
-// Configurar opciones JWT (asegúrate que en appsettings.json tengas la sección "Jwt")
+// Configurar opciones JWT
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 
 // Registrar servicios, repositorios y servicios de autenticación
 builder.Services.AddScoped<IRoleRespository, RolRepository>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 
-builder.Services.AddScoped<IUserRepository, UserRepository>(); // Para gestión de usuarios
+builder.Services.AddScoped<IUserRepository, UserRepository>(); 
 builder.Services.AddScoped<IUserService, UserService>();
-builder.Services.AddScoped<IUserAuthRepository, UserAuthRepository>(); // Para creación y login
+builder.Services.AddScoped<IUserAuthRepository, UserAuthRepository>(); 
 builder.Services.AddScoped<IUserAuthService, UserAuthService>();
 
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
-
-builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>(); // Para guardar tokens refresh
-
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
 builder.Services.AddControllers();
 
-// Leer configuración JWT
-var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>();
+// Configurar CORS **antes** de Build()
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:3000")
+              .AllowAnyHeader()
+              .AllowAnyMethod()
+              .AllowCredentials();
+    });
+});
 
+// Leer configuración JWT y validar que exista la clave
+var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>();
 if (jwtOptions == null || string.IsNullOrWhiteSpace(jwtOptions.Key))
     throw new Exception("JWT Key is not configured.");
 
@@ -76,7 +87,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-// Configurar Swagger + seguridad JWT en Swagger UI
+// Swagger con soporte JWT
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {
@@ -114,6 +125,9 @@ builder.Services.AddSwaggerGen(options =>
 });
 
 var app = builder.Build();
+
+// Middleware CORS
+app.UseCors("AllowFrontend");
 
 if (app.Environment.IsDevelopment())
 {

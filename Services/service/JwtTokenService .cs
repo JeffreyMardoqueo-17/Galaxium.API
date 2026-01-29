@@ -44,19 +44,23 @@ namespace Galaxium.API.Services.Service
                 throw new InvalidOperationException("User role is not loaded.");
 
             var claims = new List<Claim>
-            {
-                // Subject: User ID
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+{
+    // Standard .NET claim for UserId
+    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
 
-                // Unique username
-                new Claim(JwtRegisteredClaimNames.UniqueName, user.Username),
+    // Standard .NET claim for username
+    new Claim(ClaimTypes.Name, user.Username),
 
-                // User role (used by [Authorize(Roles = "...")])
-                new Claim(ClaimTypes.Role, user.Role.Name),
+    // JWT standard (opcional, pero útil)
+    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
 
-                // Unique token identifier
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            };
+    // Role for authorization
+    new Claim(ClaimTypes.Role, user.Role.Name),
+
+    // Unique token identifier
+    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+};
+
 
             var key = new SymmetricSecurityKey(
                 Encoding.UTF8.GetBytes(_options.Key)
