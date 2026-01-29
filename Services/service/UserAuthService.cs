@@ -31,8 +31,7 @@ namespace Galaxium.API.Services.Service
             return await _userRepository.CreateUserAsync(newUser);
         }
 
-        public async Task<(User user, string accessToken, string refreshToken)?>
-  AuthenticateUserAsync(string username, string password)
+        public async Task<(User user, string accessToken, string refreshToken)?> AuthenticateUserAsync(string username, string password)
         {
             var user = await _userRepository.AuthenticateUserAsync(username);
             if (user == null) return null;
@@ -41,8 +40,20 @@ namespace Galaxium.API.Services.Service
             if (!isValid) return null;
 
             var accessToken = _jwtTokenService.GenerateAccessToken(user);
-            var refreshTokenEntity = _jwtTokenService.GenerateRefreshToken(user.Id);
 
+            // Obtener todos los tokens activos
+            var activeTokens = await _refreshTokenRepository.GetActiveTokensByUserIdAsync(user.Id);
+
+            // Revocar todos los tokens activos
+            foreach (var token in activeTokens)
+            {
+                token.IsRevoked = true;
+                token.RevokedAt = DateTime.UtcNow;
+                await _refreshTokenRepository.UpdateAsync(token);
+            }
+
+            // Crear un nuevo refresh token limpio
+            var refreshTokenEntity = _jwtTokenService.GenerateRefreshToken(user.Id);
             await _refreshTokenRepository.AddAsync(refreshTokenEntity);
 
             return (user, accessToken, refreshTokenEntity.Token);

@@ -11,7 +11,6 @@ namespace Galaxium.API.Repository.Interfaces
 
         Task<User> CreateUserAsync(User newUser);
         Task<User?> AuthenticateUserAsync(string username);
-
-        
+        Task<IEnumerable<RefreshToken>> GetActiveTokensByUserIdAsync(int userId);
     }
 }

@@ -28,6 +28,13 @@ namespace Galaxium.API.Repository.Repos
                 .Include(u => u.Role)  // <== Carga explícita del rol
                 .FirstOrDefaultAsync(u => u.Username == username);
         }
+        public async Task<IEnumerable<RefreshToken>> GetActiveTokensByUserIdAsync(int userId)
+        {
+            return await _context.RefreshToken
+                .Where(t => t.UserId == userId && !t.IsRevoked && t.ExpiresAt > DateTime.UtcNow)
+                .ToListAsync();
+        }
+
 
 
     }
