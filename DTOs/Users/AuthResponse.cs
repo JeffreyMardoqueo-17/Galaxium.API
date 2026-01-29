@@ -9,5 +9,4 @@ namespace Galaxium.API.DTOs.Users
         string AccessToken,
         string RefreshToken
     );
-
 }

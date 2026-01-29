@@ -13,6 +13,8 @@ using Microsoft.Extensions.Options;
 using Galaxium.API.Entities;
 using GalaxiumERP.API.Repository.repos;
 using Galaxium.API.Services.service;
+using Galaxium.Api.Services.Interfaces;
+using Galaxium.Api.Services.service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +23,7 @@ builder.Services.AddDbContext<GalaxiumDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
 // Configurar opciones JWT (asegúrate que en appsettings.json tengas la sección "Jwt")
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
@@ -29,9 +32,9 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<IRoleRespository, RolRepository>();
 builder.Services.AddScoped<IRoleService, RoleService>();
 
-builder.Services.AddScoped<IUserRepository, UserRepository>(); // Si usas para consultas generales de usuarios
+builder.Services.AddScoped<IUserRepository, UserRepository>(); // Para gestión de usuarios
+builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserAuthRepository, UserAuthRepository>(); // Para creación y login
-
 builder.Services.AddScoped<IUserAuthService, UserAuthService>();
 
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
