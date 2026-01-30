@@ -27,7 +27,6 @@ namespace Galaxium.API.Services.Service
         {
             var hash = PasswordHasher.HashPassword(password);
             newUser.PasswordHash = hash;
-            // No salt, porque tu diseño actual no usa salt
             return await _userRepository.CreateUserAsync(newUser);
         }
 
@@ -69,7 +68,7 @@ namespace Galaxium.API.Services.Service
             if (principal == null)
                 return null;
 
-            var userId = int.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userId = int.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             var storedToken = await _refreshTokenRepository.GetByTokenAsync(refreshToken);
 

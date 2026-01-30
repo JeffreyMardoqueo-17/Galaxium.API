@@ -144,7 +144,7 @@ namespace Galaxium.Api.Controllers
             return Ok();
         }
         [HttpPost("logout")]
-        [Authorize]
+        //[Authorize]
         public async Task<IActionResult> Logout()
         {
             var refreshToken = Request.Cookies["refresh_token"];
@@ -161,7 +161,7 @@ namespace Galaxium.Api.Controllers
 
 
         // GET: api/User/{userId}
-        [HttpGet("{userId:int}")]
+         [HttpGet("{userId:int}")]
         [Authorize]
         public async Task<IActionResult> GetById(int userId)
         {

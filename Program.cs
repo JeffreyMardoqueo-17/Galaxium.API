@@ -15,6 +15,8 @@ using GalaxiumERP.API.Repository.repos;
 using Galaxium.API.Services.service;
 using Galaxium.Api.Services.Interfaces;
 using Galaxium.Api.Services.service;
+using Galaxium.Api.Repository.repos;
+using Galaxium.Api.Repository.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -42,6 +44,11 @@ builder.Services.AddScoped<IUserAuthService, UserAuthService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
+
+///
+/// //////////////todo de lo que ser ael stok 
+builder.Services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
+builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
 builder.Services.AddControllers();
 
 // Configurar CORS **antes** de Build()
