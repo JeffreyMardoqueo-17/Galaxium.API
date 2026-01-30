@@ -1,4 +1,5 @@
 using Galaxium.API.Services.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Galaxium.API.Controllers
@@ -16,6 +17,7 @@ namespace Galaxium.API.Controllers
 
         // GET: api/role
         [HttpGet]
+        [Authorize]
         public async Task<IActionResult> GetAll()
         {
             var roles = await _roleService.GetAllRolesAsync();
@@ -24,6 +26,7 @@ namespace Galaxium.API.Controllers
 
         // GET: api/role/5
         [HttpGet("{roleId:int}")]
+        [Authorize]
         public async Task<IActionResult> GetById(int roleId)
         {
             var role = await _roleService.GetRoleByIdAsync(roleId);

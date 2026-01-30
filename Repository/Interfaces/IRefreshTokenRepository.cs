@@ -1,16 +1,14 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Galaxium.API.Entities;
 
 namespace Galaxium.API.Repository.Interfaces
 {
-    public interface IUserAuthRepository
+    public interface IRefreshTokenRepository
     {
-
-        Task<User> CreateUserAsync(User newUser);
-        Task<User?> AuthenticateUserAsync(string username);
+        Task<RefreshToken> AddAsync(RefreshToken refreshToken);
+        Task<RefreshToken?> GetByTokenAsync(string token);
+        Task UpdateAsync(RefreshToken refreshToken);
         Task<IEnumerable<RefreshToken>> GetActiveTokensByUserIdAsync(int userId);
     }
 }

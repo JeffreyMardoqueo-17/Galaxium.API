@@ -22,7 +22,7 @@ namespace Galaxium.API.Repository.Repos
             return await Task.FromResult(_context.User.ToList());
         }
 
-        public async Task<User> GetUserByIdAsync(int userId)
+        public async Task<User?> GetUserByIdAsync(int userId)
         {
             var user = _context.User.FirstOrDefault(u => u.Id == userId);
             return await Task.FromResult(user);
