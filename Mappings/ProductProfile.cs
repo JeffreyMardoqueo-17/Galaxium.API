@@ -17,20 +17,27 @@ namespace Galaxium.Api.Mappings
                     opt => opt.MapFrom(src => src.InitialStock))
                 .ForMember(dest => dest.CreatedAt,
                     opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.IsActive,
-                    opt => opt.MapFrom(src => src.IsActive))
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedByUserId, opt => opt.Ignore())
-                .ForMember(dest => dest.Category, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedByUser, opt => opt.Ignore())
-                .ForMember(dest => dest.SaleDetails, opt => opt.Ignore())
-                .ForMember(dest => dest.StockMovements, opt => opt.Ignore());
+                .ForMember(dest => dest.SKU,
+                    opt => opt.Ignore()) // 🔒 SKU solo backend
+                .ForMember(dest => dest.Id,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedByUserId,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.Category,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedByUser,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.SaleDetails,
+                    opt => opt.Ignore())
+                .ForMember(dest => dest.StockMovements,
+                    opt => opt.Ignore());
 
             // ===============================
             // UPDATE → ENTITY
             // ===============================
             CreateMap<ProductUpdateRequestDTO, Product>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.SKU, opt => opt.Ignore()) // 🔒
                 .ForMember(dest => dest.Stock, opt => opt.Ignore())
                 .ForMember(dest => dest.CostPrice, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
@@ -41,7 +48,7 @@ namespace Galaxium.Api.Mappings
                 .ForMember(dest => dest.StockMovements, opt => opt.Ignore());
 
             // ===============================
-            // ENTITY → RESPONSE (RECORD)
+            // ENTITY → RESPONSE
             // ===============================
             CreateMap<Product, ProductResponseDTO>()
                 .ConstructUsing(src => new ProductResponseDTO(

@@ -9,13 +9,19 @@ using Galaxium.API.Repository.Interfaces;
 
 namespace Galaxium.Api.Services.service
 {
-    public class ProductService: IProductService
+    public class ProductService : IProductService
     {
         private readonly IProductRepository _productRepository;
-        public ProductService(IProductRepository productRepository)
+        private readonly ISkuGenerator _skuGenerator;
+
+        public ProductService(
+            IProductRepository productRepository,
+            ISkuGenerator skuGenerator)
         {
             _productRepository = productRepository;
+            _skuGenerator = skuGenerator;
         }
+
 
         public async Task<IEnumerable<Product>> GetProductsAsync()
         {
@@ -42,8 +48,16 @@ namespace Galaxium.Api.Services.service
         {
             if (newProduct == null)
                 throw new ArgumentException("Product cannot be null.");
+
+            if (newProduct.CategoryId <= 0)
+                throw new BusinessException("Category is required to generate SKU.");
+
+            // 🔹 Generar SKU en backend (regla de negocio)
+            newProduct.SKU = await _skuGenerator.GenerateAsync(newProduct.CategoryId);
+
             var addedProduct = await _productRepository.AddProductAsync(newProduct);
             return addedProduct;
         }
+
     }
 }

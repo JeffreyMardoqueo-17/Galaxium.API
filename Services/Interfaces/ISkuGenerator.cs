@@ -7,6 +7,6 @@ namespace Galaxium.Api.Services.Interfaces
 {
     public interface ISkuGenerator
     {
-        // Task<string> GenerateAsync(int categoryId);
+        Task<string> GenerateAsync(int categoryId);
     }
 }

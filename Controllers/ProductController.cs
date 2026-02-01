@@ -53,26 +53,32 @@ namespace Galaxium.Api.Controllers
         // POST: api/product
         // ===============================
         [HttpPost]
-        [Authorize]
-        public async Task<ActionResult<ProductResponseDTO>> CreateProduct(
-            [FromBody] ProductCreateRequestDTO request)
-        {
-            var productEntity = _mapper.Map<Product>(request);
+[Authorize]
+public async Task<ActionResult<ProductResponseDTO>> CreateProduct(
+    [FromBody] ProductCreateRequestDTO request)
+{
+    if (!ModelState.IsValid)
+        return BadRequest(ModelState);
 
-            // 🔐 UserId desde JWT
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)
-                ?? throw new UnauthorizedAccessException("User not authenticated.");
+    var productEntity = _mapper.Map<Product>(request);
 
-            productEntity.CreatedByUserId = int.Parse(userIdClaim.Value);
+    var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)
+        ?? throw new UnauthorizedAccessException("User not authenticated.");
 
-            var createdProduct = await _productService.AddProductAsync(productEntity);
-            var response = _mapper.Map<ProductResponseDTO>(createdProduct);
+    if (!int.TryParse(userIdClaim.Value, out var userId))
+        throw new UnauthorizedAccessException("Invalid user id.");
 
-            return CreatedAtAction(
-                nameof(GetProductById),
-                new { id = response.Id },
-                response
-            );
-        }
+    productEntity.CreatedByUserId = userId;
+
+    var createdProduct = await _productService.AddProductAsync(productEntity);
+    var response = _mapper.Map<ProductResponseDTO>(createdProduct);
+
+    return CreatedAtAction(
+        nameof(GetProductById),
+        new { id = response.Id },
+        response
+    );
+}
+
     }
 }

@@ -1,15 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 using Galaxium.Api.Repository.Interfaces;
 using Galaxium.Api.Services.Interfaces;
 using Galaxium.API.Common;
 using Galaxium.API.Repository.Interfaces;
 
-namespace Galaxium.Api.Services.service
+namespace Galaxium.Api.Services.Service
 {
-    public class SkuGenerator
+    public class SkuGenerator : ISkuGenerator
     {
         private readonly IProductRepository _productRepository;
         private readonly IProductCategoryRepository _categoryRepository;
@@ -22,18 +18,17 @@ namespace Galaxium.Api.Services.service
             _categoryRepository = categoryRepository;
         }
 
-        // public async Task<string> GenerateAsync(int categoryId)
-        // {
-        //     var category = await _categoryRepository.GetProductCategoryById(categoryId)
-        //         ?? throw new BusinessException("Categoría no encontrada");
+        public async Task<string> GenerateAsync(int categoryId)
+        {
+            var category = await _categoryRepository.GetProductCategoryById(categoryId)
+                ?? throw new BusinessException("Categoría no encontrada.");
 
-        //     var lastNumber = await _productRepository.GetLastSkuNumberByCategory(categoryId);
+            var lastNumber = await _productRepository
+                .GetLastSkuNumberByCategoryAsync(categoryId);
 
-        //     var nextNumber = lastNumber + 1;
+            var nextNumber = lastNumber + 1;
 
-        //     return $"{category.Code}-{nextNumber:D3}";
-        // }
+            return $"{category.Code}-{nextNumber:D4}";
+        }
     }
-
-
 }

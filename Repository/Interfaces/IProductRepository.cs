@@ -11,5 +11,7 @@ namespace Galaxium.API.Repository.Interfaces
         Task<IEnumerable<Product>> GetProductsAsync();
         Task<Product?> GetProductByIdAsync(int productId);
         Task<Product?> AddProductAsync(Product newProduct);
+        Task<int> GetLastSkuNumberByCategoryAsync(int categoryId);
+
     }
 }

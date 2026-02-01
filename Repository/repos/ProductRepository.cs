@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Galaxium.Api.Repository.repos
 {
-    public class ProductRepository: IProductRepository
+    public class ProductRepository : IProductRepository
     {
         private readonly GalaxiumDbContext _context;
         public ProductRepository(GalaxiumDbContext context)
@@ -30,7 +30,7 @@ namespace Galaxium.Api.Repository.repos
             return await _context.Product
                     .AsNoTracking()
                     .Include(p => p.Category)
-                    .Include (p => p.CreatedByUser)
+                    .Include(p => p.CreatedByUser)
                     .FirstOrDefaultAsync(p => p.Id == productId);
         }
         public async Task<Product?> AddProductAsync(Product newProduct)
@@ -39,5 +39,25 @@ namespace Galaxium.Api.Repository.repos
             await _context.SaveChangesAsync();
             return newProduct;
         }
+        public async Task<int> GetLastSkuNumberByCategoryAsync(int categoryId)
+        {
+            var lastSku = await _context.Product
+                .Where(p => p.CategoryId == categoryId)
+                .OrderByDescending(p => p.Id)
+                .Select(p => p.SKU)
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrWhiteSpace(lastSku))
+                return 0;
+
+            // Ej: HIG-005 → 5
+            var parts = lastSku.Split('-');
+
+            if (parts.Length < 2 || !int.TryParse(parts[^1], out var number))
+                return 0;
+
+            return number;
+        }
+
     }
 }

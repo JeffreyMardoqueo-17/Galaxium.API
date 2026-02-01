@@ -19,6 +19,7 @@ using Galaxium.Api.Services.service;
 using Galaxium.Api.Repository.repos;
 using Galaxium.Api.Repository.Interfaces;
 using Galaxium.API.Repository.repos;
+using Galaxium.Api.Services.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -53,6 +54,7 @@ builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
 
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
+builder.Services.AddScoped<ISkuGenerator, SkuGenerator>();
 
 //caragar las fotos 
 builder.Services.AddScoped<IProductPhotoRepository, ProductPhotoRepository>();
