@@ -36,6 +36,11 @@ namespace Galaxium.Api.Services.service
                 throw new BusinessException("ProductCategory cannot be null.");
             if (_productCategoryRepository == null)
                 throw new NotFoundBusinessException("ProductCategory repository is not available.");
+                // Si no viene fecha, asignar ahora truncado a minutos
+                var now = DateTime.Now;
+                productCategory.CreatedAt = new DateTime(
+                    now.Year, now.Month, now.Day, now.Hour, now.Minute, 0);
+
             return await _productCategoryRepository.CreateProductCategory(productCategory);
         }
     }
