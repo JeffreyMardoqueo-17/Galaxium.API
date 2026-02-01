@@ -68,6 +68,7 @@ GO
 CREATE TABLE ProductCategory (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     Name VARCHAR(100) NOT NULL,
+    Code VARCHAR(10) NOT NULL DEFAULT 'GEN',
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE()
 );
 GO
@@ -75,6 +76,13 @@ GO
 /* ============================================================
    TABLA: Product
    ============================================================ */
+--    Product: guarda datos básicos del producto, stock total actual, costo y precio de venta.
+
+-- ProductPhoto: almacena fotos, con posibilidad de varias por producto y una primaria.
+
+-- StockEntry: controla cada lote o entrada de stock con cantidad, costo unitario y total invertido. Permite saber cuánto has invertido y cuánto stock queda por lote (con IsActive).
+
+-- StockMovement: registra cada movimiento de stock (entradas y salidas), útil para auditoría y control histórico.
 CREATE TABLE Product (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     CategoryId INT NOT NULL,
@@ -99,7 +107,49 @@ CREATE TABLE Product (
 );
 GO
 
-/* ============================================================
+CREATE TABLE ProductPhoto (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    ProductId INT NOT NULL,
+    PhotoUrl VARCHAR(500) NOT NULL,
+    IsPrimary BIT NOT NULL DEFAULT 0,
+    UploadedAt DATETIME NOT NULL DEFAULT GETDATE(),
+
+    CONSTRAINT FK_ProductPhoto_Product FOREIGN KEY (ProductId) REFERENCES Product(Id)
+);
+CREATE TABLE StockEntry (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    ProductId INT NOT NULL,
+    UserId INT NOT NULL,
+
+    Quantity INT NOT NULL,
+    UnitCost DECIMAL(18,2) NOT NULL, -- precio unitario de compra
+    TotalCost AS (Quantity * UnitCost) PERSISTED,
+
+    CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+    IsActive BIT NOT NULL DEFAULT 1, -- para saber si aún quedan productos en ese lote
+
+    CONSTRAINT FK_StockEntry_Product FOREIGN KEY (ProductId) REFERENCES Product(Id),
+    CONSTRAINT FK_StockEntry_User FOREIGN KEY (UserId) REFERENCES [User](Id)
+);
+GO
+
+GO
+CREATE TABLE StockMovement (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    ProductId INT NOT NULL,
+    UserId INT NOT NULL,
+    MovementType VARCHAR(10) NOT NULL, -- 'IN' o 'OUT'
+    Quantity INT NOT NULL,
+    Reference VARCHAR(100) NULL, -- ej: 'PURCHASE', 'SALE', 'ADJUSTMENT'
+    CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+
+    CONSTRAINT FK_StockMovement_Product FOREIGN KEY (ProductId) REFERENCES Product(Id),
+    CONSTRAINT FK_StockMovement_User FOREIGN KEY (UserId) REFERENCES [User](Id)
+);
+GO
+
+/* ======
+======================================================
    TABLA: Customer
    ============================================================ */
 CREATE TABLE Customer (

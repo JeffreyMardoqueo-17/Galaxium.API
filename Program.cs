@@ -1,4 +1,5 @@
 using System.Text;
+using CloudinaryDotNet;
 using Galaxium.API.Data;
 using Galaxium.API.Middlewares;
 using Galaxium.API.Repository.Interfaces;
@@ -17,6 +18,7 @@ using Galaxium.Api.Services.Interfaces;
 using Galaxium.Api.Services.service;
 using Galaxium.Api.Repository.repos;
 using Galaxium.Api.Repository.Interfaces;
+using Galaxium.API.Repository.repos;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -44,11 +46,18 @@ builder.Services.AddScoped<IUserAuthService, UserAuthService>();
 builder.Services.AddScoped<IJwtTokenService, JwtTokenService>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 
-
 ///
 /// //////////////todo de lo que ser ael stok 
 builder.Services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
 builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
+
+builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IProductService, ProductService>();
+
+//caragar las fotos 
+builder.Services.AddScoped<IProductPhotoRepository, ProductPhotoRepository>();
+builder.Services.AddScoped<IProductPhotoService, ProductPhotoService>();
+
 builder.Services.AddControllers();
 
 // Configurar CORS **antes** de Build()
@@ -56,7 +65,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins("http://localhost:3001")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
@@ -92,6 +101,15 @@ builder.Services.AddAuthentication(options =>
 
         ClockSkew = TimeSpan.Zero
     };
+});
+
+/// servicio de claudinary
+builder.Services.AddSingleton(sp =>
+{
+    var cloudinaryUrl = builder.Configuration["URL:Claudinary"];
+    if (string.IsNullOrWhiteSpace(cloudinaryUrl))
+        throw new Exception("Cloudinary URL is not configured.");
+    return new Cloudinary(cloudinaryUrl);
 });
 
 // Swagger con soporte JWT

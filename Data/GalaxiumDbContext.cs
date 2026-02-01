@@ -21,7 +21,7 @@ namespace Galaxium.API.Data
         // ==========================
         public DbSet<ProductCategory> ProductCategory => Set<ProductCategory>();
         public DbSet<Product> Product => Set<Product>();
-
+        public DbSet<ProductPhoto> ProductPhoto => Set<ProductPhoto>();
         // ==========================
         // Clientes
         // ==========================
