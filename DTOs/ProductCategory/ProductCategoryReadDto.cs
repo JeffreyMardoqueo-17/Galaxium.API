@@ -6,5 +6,5 @@ using System.Threading.Tasks;
 namespace Galaxium.Api.DTOs.ProductCategory
 {
     public record ProductCategoryReadDto
-    (int Id, string Name, DateTime CreatedAt);
+    (int Id, string Name,string Code, DateTime CreatedAt);
 }

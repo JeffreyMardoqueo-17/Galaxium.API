@@ -4,12 +4,13 @@ using System.Linq;
 using System.Threading.Tasks;
 using Galaxium.API.Data;
 using Galaxium.API.Entities;
+using Galaxium.API.Models;
 using Galaxium.API.Repository.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Galaxium.Api.Repository.repos
 {
-    public class ProductRepository : IProductRepository
+    public class ProductRepository : IProductRepository, IProductFilterRepository
     {
         private readonly GalaxiumDbContext _context;
         public ProductRepository(GalaxiumDbContext context)
@@ -57,6 +58,48 @@ namespace Galaxium.Api.Repository.repos
                 return 0;
 
             return number;
+        }
+
+        //filtros 
+        public async Task<IEnumerable<Product>> GetProductsAsync(ProductFilterModel filter)
+        {
+            IQueryable<Product> query = _context.Product;
+
+            // 🎯 Filtros
+            if (filter.CategoryId.HasValue)
+                query = query.Where(p => p.CategoryId == filter.CategoryId.Value)
+                .Include(p => p.Category)
+                .Include(p => p.CreatedByUser); 
+
+            if (!string.IsNullOrWhiteSpace(filter.Name))
+                query = query.Where(p => p.Name.Contains(filter.Name));
+
+            if (filter.MinPrice.HasValue)
+                query = query.Where(p => p.SalePrice >= filter.MinPrice.Value);
+
+            if (filter.MaxPrice.HasValue)
+                query = query.Where(p => p.SalePrice <= filter.MaxPrice.Value);
+
+            if (filter.MinStock.HasValue)
+                query = query.Where(p => p.Stock >= filter.MinStock.Value);
+
+            if (filter.MaxStock.HasValue)
+                query = query.Where(p => p.Stock <= filter.MaxStock.Value);
+
+            if (filter.IsActive.HasValue)
+                query = query.Where(p => p.IsActive == filter.IsActive.Value);
+
+            // 🔽 Ordenamiento dinámico
+            query = filter.OrderDescending
+                ? query.OrderByDescending(e => EF.Property<object>(e, filter.OrderBy))
+                : query.OrderBy(e => EF.Property<object>(e, filter.OrderBy));
+
+            // 📄 Paginación
+            query = query
+                .Skip((filter.Page - 1) * filter.PageSize)
+                .Take(filter.PageSize);
+
+            return await query.ToListAsync();
         }
 
     }

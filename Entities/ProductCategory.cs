@@ -10,7 +10,7 @@ namespace Galaxium.API.Entities
         public string Name { get; set; } = null!;
 
         // CLAVE PARA SKU
-        public string Code { get; set; } = null!; // HIG, ELE, TEC
+        public string? Code { get; set; }// HIG, ELE, TEC
 
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
