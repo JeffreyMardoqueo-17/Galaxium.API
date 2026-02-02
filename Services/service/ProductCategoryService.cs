@@ -12,9 +12,14 @@ namespace Galaxium.Api.Services.service
     public class ProductCategoryService : IProductCategoryService
     {
         private readonly IProductCategoryRepository _productCategoryRepository;
-        public ProductCategoryService(IProductCategoryRepository productCategoryRepository)
+        private readonly ICategoryCodeGenerator _codeGenerator;
+
+        public ProductCategoryService(
+            IProductCategoryRepository productCategoryRepository,
+            ICategoryCodeGenerator codeGenerator)
         {
             _productCategoryRepository = productCategoryRepository;
+            _codeGenerator = codeGenerator;
         }
         public async Task<IEnumerable<ProductCategory>> GetAllProductCategories()
         {
@@ -34,12 +39,15 @@ namespace Galaxium.Api.Services.service
         {
             if (productCategory == null)
                 throw new BusinessException("ProductCategory cannot be null.");
-            if (_productCategoryRepository == null)
-                throw new NotFoundBusinessException("ProductCategory repository is not available.");
-                // Si no viene fecha, asignar ahora truncado a minutos
-                var now = DateTime.Now;
-                productCategory.CreatedAt = new DateTime(
-                    now.Year, now.Month, now.Day, now.Hour, now.Minute, 0);
+
+            // 🔥 GENERAR CÓDIGO SI NO VIENE
+            if (string.IsNullOrWhiteSpace(productCategory.Code))
+            {
+                productCategory.Code =
+                    await _codeGenerator.GenerateAsync(productCategory.Name);
+            }
+
+            productCategory.CreatedAt = DateTime.Now;
 
             return await _productCategoryRepository.CreateProductCategory(productCategory);
         }

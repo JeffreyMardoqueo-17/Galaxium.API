@@ -2,6 +2,7 @@ using AutoMapper;
 using Galaxium.API.Entities;
 using Galaxium.API.DTOs.Product;
 using System;
+using Galaxium.API.Models;
 
 namespace Galaxium.Api.Mappings
 {
@@ -66,6 +67,16 @@ namespace Galaxium.Api.Mappings
                     src.CreatedByUserId,
                     src.CreatedByUser != null ? src.CreatedByUser.FullName : string.Empty
                 ));
+            // ===============================
+            // FILTER DTO → FILTER MODEL
+            // ===============================
+            CreateMap<ProductFilterRequestDTO, ProductFilterModel>()
+                .ForMember(dest => dest.OrderBy,
+                    opt => opt.MapFrom(src =>
+                        string.IsNullOrWhiteSpace(src.OrderBy)
+                            ? "CreatedAt"
+                            : src.OrderBy
+                    ));
         }
     }
 }

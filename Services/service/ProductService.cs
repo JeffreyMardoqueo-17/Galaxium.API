@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Galaxium.Api.Services.Interfaces;
 using Galaxium.API.Common;
 using Galaxium.API.Entities;
+using Galaxium.API.Models;
 using Galaxium.API.Repository.Interfaces;
 
 namespace Galaxium.Api.Services.service
@@ -13,13 +14,16 @@ namespace Galaxium.Api.Services.service
     {
         private readonly IProductRepository _productRepository;
         private readonly ISkuGenerator _skuGenerator;
+        private readonly IProductFilterRepository _productFilterRepository;
 
         public ProductService(
             IProductRepository productRepository,
-            ISkuGenerator skuGenerator)
+            ISkuGenerator skuGenerator,
+            IProductFilterRepository productFilterRepository)
         {
             _productRepository = productRepository;
             _skuGenerator = skuGenerator;
+            _productFilterRepository = productFilterRepository;
         }
 
 
@@ -57,6 +61,20 @@ namespace Galaxium.Api.Services.service
 
             var addedProduct = await _productRepository.AddProductAsync(newProduct);
             return addedProduct;
+        }
+        public async Task<IEnumerable<Product>> GetProductsFilterAsync(ProductFilterModel filter)
+        {
+            // 🧠 Reglas de negocio 
+            if (filter.PageSize > 100)
+                filter.PageSize = 100;
+
+            if (filter.Page < 1)
+                filter.Page = 1;
+
+            if (string.IsNullOrWhiteSpace(filter.OrderBy))
+                filter.OrderBy = "CreatedAt";
+
+            return await _productFilterRepository.GetProductsAsync(filter);
         }
 
     }

@@ -68,7 +68,7 @@ GO
 CREATE TABLE ProductCategory (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     Name VARCHAR(100) NOT NULL,
-    Code VARCHAR(10) NOT NULL DEFAULT 'GEN',
+    Code VARCHAR(10)  DEFAULT 'GEN' NOT NULL,
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE()
 );
 GO
@@ -138,15 +138,17 @@ CREATE TABLE StockMovement (
     Id INT IDENTITY(1,1) PRIMARY KEY,
     ProductId INT NOT NULL,
     UserId INT NOT NULL,
-    MovementType VARCHAR(10) NOT NULL, -- 'IN' o 'OUT'
+
+    MovementType VARCHAR(10) NOT NULL, -- IN / OUT
     Quantity INT NOT NULL,
-    Reference VARCHAR(100) NULL, -- ej: 'PURCHASE', 'SALE', 'ADJUSTMENT'
+    ReferenceType VARCHAR(50) NOT NULL, -- SALE, PURCHASE, ADJUSTMENT
+    ReferenceId INT NULL,
+
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
 
     CONSTRAINT FK_StockMovement_Product FOREIGN KEY (ProductId) REFERENCES Product(Id),
     CONSTRAINT FK_StockMovement_User FOREIGN KEY (UserId) REFERENCES [User](Id)
 );
-GO
 
 /* ======
 ======================================================

@@ -51,10 +51,13 @@ builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 /// //////////////todo de lo que ser ael stok 
 builder.Services.AddScoped<IProductCategoryRepository, ProductCategoryRepository>();
 builder.Services.AddScoped<IProductCategoryService, ProductCategoryService>();
+builder.Services.AddScoped<ICategoryCodeGenerator, CategoryCodeGenerator>();
 
 builder.Services.AddScoped<IProductRepository, ProductRepository>();
+builder.Services.AddScoped<IProductFilterRepository, ProductRepository>();
 builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ISkuGenerator, SkuGenerator>();
+builder.Services.AddScoped<IProductFilterRepository, ProductRepository>();
 
 //caragar las fotos 
 builder.Services.AddScoped<IProductPhotoRepository, ProductPhotoRepository>();
@@ -67,7 +70,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3001")
+        policy.WithOrigins("http://localhost:3000")
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
