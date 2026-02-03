@@ -5,8 +5,11 @@ using System.Threading.Tasks;
 
 namespace Galaxium.Api.Services.Interfaces
 {
+
     public interface IEmailService
     {
-        Task EnviarEmail(string emailReceptor, string assunto, string cuerpo);
+        Task EnviarEmailRegistroCliente(string? emailReceptor, string nombreCliente);
+        Task EnviarEmailFactura(string? emailReceptor, string nombreCliente, byte[] facturaPdfBytes, string nombreArchivoPdf);
     }
+
 }

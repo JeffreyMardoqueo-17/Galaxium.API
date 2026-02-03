@@ -60,7 +60,10 @@ builder.Services.AddScoped<ISkuGenerator, SkuGenerator>();
 builder.Services.AddScoped<IProductFilterRepository, ProductRepository>();
 
 //servicios de usaurios
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+
 
 //caragar las fotos 
 builder.Services.AddScoped<IProductPhotoRepository, ProductPhotoRepository>();

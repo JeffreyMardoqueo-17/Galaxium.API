@@ -17,11 +17,24 @@ namespace Galaxium.Api.Controllers
             _emailService = emailService;
         }
 
-        [HttpPost("enviar")]
-        public async Task<IActionResult> EnviarEmail(string email, string tema, string cuerpo)
+        [HttpPost("registro")]
+        public async Task<IActionResult> RegistrarCliente(string email, string nombre)
         {
-            await _emailService.EnviarEmail(email, tema, cuerpo);
-            return Ok(new { mensaje = "Email enviado exitosamente." });
+            await _emailService.EnviarEmailRegistroCliente(email, nombre);
+            return Ok(new { mensaje = "Correo de registro enviado." });
         }
+
+        [HttpPost("factura")]
+        public async Task<IActionResult> EnviarFactura(string email, string nombre, IFormFile facturaPdf)
+        {
+            using var ms = new MemoryStream();
+            await facturaPdf.CopyToAsync(ms);
+            var pdfBytes = ms.ToArray();
+
+            await _emailService.EnviarEmailFactura(email, nombre, pdfBytes, facturaPdf.FileName);
+
+            return Ok(new { mensaje = "Factura enviada exitosamente." });
+        }
+
     }
 }
