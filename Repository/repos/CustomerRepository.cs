@@ -33,8 +33,16 @@ namespace Galaxium.Api.Repository.repos
         public async Task<Customer> CreateCustomerAsync(Customer customer)
         {
             _context.Customer.Add(customer);
-            await  _context.SaveChangesAsync();
+            await _context.SaveChangesAsync();
             return customer;
+        }
+
+        //validador de email unico
+        public async Task<bool> ExistsByEmailAsync(string email)
+        {
+            return await _context.Customer
+                .AsNoTracking()
+                .AnyAsync(c => c.Email == email);
         }
     }
 }

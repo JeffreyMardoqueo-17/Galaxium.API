@@ -58,22 +58,22 @@ namespace Galaxium.Api.Controllers
         [HttpPost]
         [Authorize]
         public async Task<ActionResult<ProductResponseDTO>> CreateProduct(
-    [FromBody] ProductCreateRequestDTO request)
+         [FromBody] ProductCreateRequestDTO request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var productEntity = _mapper.Map<Product>(request);
-
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)
-                ?? throw new UnauthorizedAccessException("User not authenticated.");
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized("Token inválido: no contiene UserId");
 
             if (!int.TryParse(userIdClaim.Value, out var userId))
-                throw new UnauthorizedAccessException("Invalid user id.");
+                return Unauthorized("UserId inválido en el token");
 
-            productEntity.CreatedByUserId = userId;
+            var productEntity = _mapper.Map<Product>(request);
 
-            var createdProduct = await _productService.AddProductAsync(productEntity);
+            var createdProduct = await _productService.AddProductAsync(productEntity, userId);
+
             var response = _mapper.Map<ProductResponseDTO>(createdProduct);
 
             return CreatedAtAction(
@@ -82,6 +82,7 @@ namespace Galaxium.Api.Controllers
                 response
             );
         }
+
 
         // ===============================
         // GET: api/product/filter

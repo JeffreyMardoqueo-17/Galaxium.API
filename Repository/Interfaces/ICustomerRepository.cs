@@ -11,5 +11,8 @@ namespace Galaxium.Api.Repository.Interfaces
         Task<IEnumerable<Customer>> GetAllCustomersAsync();
         Task<Customer?> GetByIdCustomerAsync(int id);
         Task<Customer> CreateCustomerAsync(Customer customer);
+
+        ///esto es para validad
+        Task<bool> ExistsByEmailAsync(string email);
     }
 }

@@ -9,6 +9,6 @@ namespace Galaxium.API.Repository.Interfaces
 {
     public interface IProductFilterRepository
     {
-        Task<IEnumerable<Product>> GetProductsAsync(ProductFilterModel filter);
+        Task<IEnumerable<Product>> GetProductsFilterAsync(ProductFilterModel filter);
     }
 }

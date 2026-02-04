@@ -48,20 +48,30 @@ namespace Galaxium.Api.Services.service
             }
             return product;
         }
-        public async Task<Product?> AddProductAsync(Product newProduct)
+        public async Task<Product> AddProductAsync(Product newProduct, int userId)
         {
             if (newProduct == null)
-                throw new ArgumentException("Product cannot be null.");
+                throw new ArgumentNullException(nameof(newProduct));
 
             if (newProduct.CategoryId <= 0)
                 throw new BusinessException("Category is required to generate SKU.");
 
-            // 🔹 Generar SKU en backend (regla de negocio)
+            // 🔒 Estado inicial CONTROLADO
+            newProduct.CreatedByUserId = userId;
+            newProduct.Stock = 0;
+            newProduct.CostPrice = null;
+            newProduct.SalePrice = null;
+            newProduct.IsActive = false;
+            newProduct.CreatedAt = DateTime.UtcNow;
+
+            // 🧠 Regla de negocio
             newProduct.SKU = await _skuGenerator.GenerateAsync(newProduct.CategoryId);
 
-            var addedProduct = await _productRepository.AddProductAsync(newProduct);
-            return addedProduct;
+            return await _productRepository.AddProductAsync(newProduct);
         }
+
+
+
         public async Task<IEnumerable<Product>> GetProductsFilterAsync(ProductFilterModel filter)
         {
             // 🧠 Reglas de negocio 
@@ -74,7 +84,7 @@ namespace Galaxium.Api.Services.service
             if (string.IsNullOrWhiteSpace(filter.OrderBy))
                 filter.OrderBy = "CreatedAt";
 
-            return await _productFilterRepository.GetProductsAsync(filter);
+            return await _productFilterRepository.GetProductsFilterAsync(filter);
         }
 
     }

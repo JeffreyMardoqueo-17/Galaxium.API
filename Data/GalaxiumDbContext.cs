@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Galaxium.API.Entities;
+using Galaxium.Api.Entities;
 
 namespace Galaxium.API.Data
 {
@@ -36,30 +37,36 @@ namespace Galaxium.API.Data
         // ==========================
         // Inventario
         // ==========================
-        public DbSet<StockMovement> StockMovements => Set<StockMovement>();
+        public DbSet<StockMovement> StockMovement => Set<StockMovement>();
         public DbSet<RefreshToken> RefreshToken => Set<RefreshToken>();
+        public DbSet<StockEntry> StockEntry => Set<StockEntry>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
-{
-    base.OnModelCreating(modelBuilder);
+        {
+            base.OnModelCreating(modelBuilder);
 
-    modelBuilder.Entity<Product>(entity =>
-    {
-        entity.Property(p => p.CostPrice).HasColumnType("decimal(18,2)");
-        entity.Property(p => p.SalePrice).HasColumnType("decimal(18,2)");
-    });
+            modelBuilder.Entity<Product>(entity =>
+            {
+                entity.Property(p => p.CostPrice).HasColumnType("decimal(18,2)");
+                entity.Property(p => p.SalePrice).HasColumnType("decimal(18,2)");
+            });
 
-    modelBuilder.Entity<Sale>(entity =>
-    {
-        entity.Property(s => s.Total).HasColumnType("decimal(18,2)");
-    });
+            modelBuilder.Entity<Sale>(entity =>
+            {
+                entity.Property(s => s.Total).HasColumnType("decimal(18,2)");
+            });
 
-    modelBuilder.Entity<SaleDetail>(entity =>
-    {
-        entity.Property(sd => sd.SubTotal).HasColumnType("decimal(18,2)");
-        entity.Property(sd => sd.UnitPrice).HasColumnType("decimal(18,2)");
-    });
-}
+            modelBuilder.Entity<SaleDetail>(entity =>
+            {
+                entity.Property(sd => sd.SubTotal).HasColumnType("decimal(18,2)");
+                entity.Property(sd => sd.UnitPrice).HasColumnType("decimal(18,2)");
+            });
+
+            modelBuilder.Entity<StockEntry>()
+    .Property(x => x.TotalCost)
+    .HasComputedColumnSql("[Quantity] * [UnitCost]", stored: true);
+
+        }
 
     }
 }

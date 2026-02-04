@@ -12,5 +12,6 @@ namespace Galaxium.Api.Services.Interfaces
         Task<IEnumerable<Customer>> GetAllCustomersAsync();
         Task<Customer?> GetByIdCustomerAsync(int id);
         Task<Customer> CreateCustomerAsync(Customer customer);
+
     }
 }

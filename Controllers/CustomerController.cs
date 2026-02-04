@@ -6,6 +6,7 @@ using Galaxium.API.DTOs.Customer;
 using Galaxium.API.Entities;
 using Galaxium.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Galaxium.API.Common;
 
 namespace Galaxium.Api.Controllers
 {
@@ -60,11 +61,27 @@ namespace Galaxium.Api.Controllers
                 var createdCustomer = await _customerService.CreateCustomerAsync(customerEntity);
                 var createdCustomerDto = _mapper.Map<CustomerResponseDTO>(createdCustomer);
 
-                return CreatedAtAction(nameof(GetCustomerById), new { id = createdCustomerDto.Id }, createdCustomerDto);
+                return CreatedAtAction(
+                    nameof(GetCustomerById),
+                    new { id = createdCustomerDto.Id },
+                    createdCustomerDto
+                );
             }
-            catch (Exception ex)
+            catch (BusinessException ex)
             {
-                return BadRequest(new { message = ex.Message });
+                // ❗ Error de negocio (email duplicado, validaciones, etc.)
+                return BadRequest(new
+                {
+                    message = ex.Message
+                });
+            }
+            catch (Exception)
+            {
+                // ❗ Error inesperado
+                return StatusCode(500, new
+                {
+                    message = "Ocurrió un error inesperado al crear el cliente."
+                });
             }
         }
     }

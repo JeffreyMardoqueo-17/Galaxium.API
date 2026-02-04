@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using FluentValidation;
 using Galaxium.Api.Repository.Interfaces;
 using Galaxium.Api.Services.Interfaces;
 using Galaxium.API.Common;
@@ -13,10 +14,12 @@ namespace Galaxium.Api.Services.service
     {
         private readonly ICustomerRepository _customerRepository;
         private readonly IEmailService _emailService;
-        public CustomerService(ICustomerRepository customerRepository, IEmailService emailService)
+        private readonly IValidator<Customer> _customerValidator;
+        public CustomerService(ICustomerRepository customerRepository, IEmailService emailService, IValidator<Customer> customerValidator)
         {
             _customerRepository = customerRepository;
             _emailService = emailService;
+            _customerValidator = customerValidator;
         }
 
         public async Task<IEnumerable<Customer>> GetAllCustomersAsync()
@@ -41,8 +44,16 @@ namespace Galaxium.Api.Services.service
 
         public async Task<Customer> CreateCustomerAsync(Customer customer)
         {
-            if (string.IsNullOrWhiteSpace(customer.FullName))
-                throw new BusinessException("Customer full name is required.");
+            // Ejecutar validaciones
+            var validationResult = await _customerValidator.ValidateAsync(customer);
+
+            if (!validationResult.IsValid)
+            {
+                var errors = string.Join(" | ",
+                    validationResult.Errors.Select(e => e.ErrorMessage));
+
+                throw new BusinessException(errors);
+            }
 
             customer.CreatedAt = DateTime.UtcNow;
 
@@ -58,7 +69,7 @@ namespace Galaxium.Api.Services.service
 
             try
             {
-                await _emailService.EnviarEmailRegistroCliente(customer.Email, customer.FullName);
+                await _emailService.EnviarEmailRegistroCliente(customer.Email!, customer.FullName);
             }
             catch (Exception ex)
             {

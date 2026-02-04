@@ -20,6 +20,9 @@ using Galaxium.Api.Repository.repos;
 using Galaxium.Api.Repository.Interfaces;
 using Galaxium.API.Repository.repos;
 using Galaxium.Api.Services.Service;
+using FluentValidation;
+using Galaxium.Api.Validators;
+using Galaxium.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -63,6 +66,13 @@ builder.Services.AddScoped<IProductFilterRepository, ProductRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+
+//para el stokEntry
+builder.Services.AddScoped<IStockEntryRepository, StockEntryRepository>();
+builder.Services.AddScoped<IStockEntryService, StockEntryService>();
+
+//validaciones
+builder.Services.AddScoped<IValidator<Customer>, CustomerValidator>();
 
 
 //caragar las fotos 
