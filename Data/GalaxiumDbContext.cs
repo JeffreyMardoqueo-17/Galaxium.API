@@ -63,9 +63,11 @@ namespace Galaxium.API.Data
             });
 
             modelBuilder.Entity<StockEntry>()
-    .Property(x => x.TotalCost)
-    .HasComputedColumnSql("[Quantity] * [UnitCost]", stored: true);
-
+            .Property(x => x.TotalCost)
+            .HasComputedColumnSql("[Quantity] * [UnitCost]", stored: true);
+            
+            modelBuilder.Entity<StockEntry>()
+            .Ignore(se => se.TotalCost);
         }
 
     }

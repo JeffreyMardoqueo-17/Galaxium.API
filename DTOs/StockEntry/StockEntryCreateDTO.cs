@@ -2,12 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Galaxium.Api.Enums;
 
 namespace Galaxium.Api.DTOs.StockEntry
 {
-    public record StockEntryCreateDTO(
+  public record StockEntryCreateDTO(
         int ProductId,
         int Quantity,
-        decimal UnitCost
+        StockReferenceType ReferenceType,
+        int? ReferenceId,
+        decimal? UnitCost
     );
 }

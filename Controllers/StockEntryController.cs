@@ -5,6 +5,8 @@ using Galaxium.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Galaxium.Api.Controllers
 {
@@ -33,8 +35,10 @@ namespace Galaxium.Api.Controllers
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
+            // Map DTO → Entity
             var stockEntryEntity = _mapper.Map<StockEntry>(request);
 
+            // Obtener userId desde JWT
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)
                 ?? throw new UnauthorizedAccessException("User not authenticated.");
 
@@ -43,9 +47,11 @@ namespace Galaxium.Api.Controllers
 
             stockEntryEntity.UserId = userId;
 
+            // Crear StockEntry usando el Service
             var createdEntry = await _stockEntryService
                 .CreateStockEntryAsync(stockEntryEntity);
 
+            // Map Entity → Response DTO
             var response = _mapper.Map<StockEntryResponseDTO>(createdEntry);
 
             return CreatedAtAction(

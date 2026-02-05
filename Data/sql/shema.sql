@@ -17,16 +17,19 @@ GO
 /* ============================================================
    TABLA: Role
    ============================================================ */
-CREATE TABLE Role (
+CREATE TABLE Role
+(
     Id INT IDENTITY(1,1) PRIMARY KEY,
-    Name VARCHAR(50) NOT NULL -- ADMINISTRADOR, VENDEDOR
+    Name VARCHAR(50) NOT NULL
+    -- ADMINISTRADOR, VENDEDOR
 );
 GO
 
 /* ============================================================
    TABLA: User
    ============================================================ */
-CREATE TABLE [User] (
+CREATE TABLE [User]
+(
     Id INT IDENTITY(1,1) PRIMARY KEY,
     RoleId INT NOT NULL,
     FullName VARCHAR(150) NOT NULL,
@@ -45,7 +48,8 @@ GO
 --✔ Rotación de tokens
 --✔ Auditoría
 --✔ Múltiples dispositivos
-CREATE TABLE RefreshToken (
+CREATE TABLE RefreshToken
+(
     Id INT IDENTITY(1,1) PRIMARY KEY,
     UserId INT NOT NULL,
     Token VARCHAR(500) NOT NULL,
@@ -65,10 +69,11 @@ GO
 /* ============================================================
    TABLA: ProductCategory
    ============================================================ */
-CREATE TABLE ProductCategory (
+CREATE TABLE ProductCategory
+(
     Id INT IDENTITY(1,1) PRIMARY KEY,
     Name VARCHAR(100) NOT NULL,
-    Code VARCHAR(10)  DEFAULT 'GEN' NOT NULL,
+    Code VARCHAR(10) DEFAULT 'GEN' NOT NULL,
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE()
 );
 GO
@@ -83,7 +88,8 @@ GO
 -- StockEntry: controla cada lote o entrada de stock con cantidad, costo unitario y total invertido. Permite saber cuánto has invertido y cuánto stock queda por lote (con IsActive).
 
 -- StockMovement: registra cada movimiento de stock (entradas y salidas), útil para auditoría y control histórico.
-CREATE TABLE Product (
+CREATE TABLE Product
+(
     Id INT IDENTITY(1,1) PRIMARY KEY,
     CategoryId INT NOT NULL,
     CreatedByUserId INT NOT NULL,
@@ -107,7 +113,8 @@ CREATE TABLE Product (
 );
 GO
 
-CREATE TABLE ProductPhoto (
+CREATE TABLE ProductPhoto
+(
     Id INT IDENTITY(1,1) PRIMARY KEY,
     ProductId INT NOT NULL,
     PhotoUrl VARCHAR(500) NOT NULL,
@@ -125,19 +132,28 @@ GO
    Permite controlar stock, costo unitario y total invertido.
    Se vincula con Product y User (quién registró el stock)
 ============================================================ */
-CREATE TABLE StockEntry (
+CREATE TABLE StockEntry
+(
     Id INT IDENTITY(1,1) PRIMARY KEY,
     ProductId INT NOT NULL,
-    UserId INT NOT NULL, -- quién registró la compra
+    UserId INT NOT NULL,
+    -- quién registró la compra
 
-    Quantity INT NOT NULL, -- cantidad comprada
-    RemainingQuantity INT NOT NULL, -- cantidad restante del lote
+    Quantity INT NOT NULL,
+    -- cantidad comprada
+    RemainingQuantity INT NOT NULL,
+    -- cantidad restante del lote
 
-    UnitCost DECIMAL(18,2) NOT NULL, -- costo unitario de compra
+    UnitCost DECIMAL(18,2) NOT NULL,
+    -- costo unitario de compra
     TotalCost AS (Quantity * UnitCost) PERSISTED,
+    ReferenceType INT NOT NULL DEFAULT 1,
+    -- 1 = Purchase por defecto
+    ReferenceId INT NULL,
 
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
-    IsActive BIT NOT NULL DEFAULT 1, -- activo mientras RemainingQuantity > 0
+    IsActive BIT NOT NULL DEFAULT 1,
+    -- activo mientras RemainingQuantity > 0
 
     CONSTRAINT FK_StockEntry_Product 
         FOREIGN KEY (ProductId) REFERENCES Product(Id),
@@ -153,15 +169,21 @@ GO
    Descripción: Movimientos de stock (entradas o salidas)
    Útil para auditoría y control histórico
 ============================================================ */
-CREATE TABLE StockMovement (
+CREATE TABLE StockMovement
+(
     Id INT IDENTITY(1,1) PRIMARY KEY,
     ProductId INT NOT NULL,
-    UserId INT NOT NULL, -- quién hizo el movimiento
+    UserId INT NOT NULL,
+    -- quién hizo el movimiento
 
-    MovementType VARCHAR(10) NOT NULL, -- 'IN' / 'OUT'
-    Quantity INT NOT NULL, -- cantidad de producto movido
-    ReferenceType VARCHAR(50) NOT NULL, -- 'SALE', 'PURCHASE', 'ADJUSTMENT'
-    ReferenceId INT NULL, -- opcional, id de la venta o stock entry relacionado
+    MovementType VARCHAR(10) NOT NULL,
+    -- 'IN' / 'OUT'
+    Quantity INT NOT NULL,
+    -- cantidad de producto movido
+    ReferenceType VARCHAR(50) NOT NULL,
+    -- 'SALE', 'PURCHASE', 'ADJUSTMENT'
+    ReferenceId INT NULL,
+    -- opcional, id de la venta o stock entry relacionado
 
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
 
@@ -174,7 +196,8 @@ GO
    TABLA: Customer
    Descripción: Clientes para registro de ventas
 ============================================================ */
-CREATE TABLE Customer (
+CREATE TABLE Customer
+(
     Id INT IDENTITY(1,1) PRIMARY KEY,
     FullName VARCHAR(150) NOT NULL,
     Phone VARCHAR(20),
@@ -187,14 +210,19 @@ GO
    TABLA: Sale
    Descripción: Venta realizada
 ============================================================ */
-CREATE TABLE Sale (
+CREATE TABLE Sale
+(
     Id INT IDENTITY(1,1) PRIMARY KEY,
-    CustomerId INT NULL, -- cliente opcional
-    SellerUserId INT NOT NULL, -- vendedor que realizó la venta
+    CustomerId INT NULL,
+    -- cliente opcional
+    SellerUserId INT NOT NULL,
+    -- vendedor que realizó la venta
 
     SaleDate DATETIME NOT NULL DEFAULT GETDATE(),
-    Total DECIMAL(18,2) NOT NULL, -- total de la venta
-    PaymentMethod VARCHAR(50) NOT NULL, -- forma de pago
+    Total DECIMAL(18,2) NOT NULL,
+    -- total de la venta
+    PaymentMethod VARCHAR(50) NOT NULL,
+    -- forma de pago
 
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
 
@@ -207,13 +235,16 @@ GO
    TABLA: SaleDetail
    Descripción: Detalle de cada producto vendido
 ============================================================ */
-CREATE TABLE SaleDetail (
+CREATE TABLE SaleDetail
+(
     Id INT IDENTITY(1,1) PRIMARY KEY,
     SaleId INT NOT NULL,
     ProductId INT NOT NULL,
     Quantity INT NOT NULL,
-    UnitPrice DECIMAL(18,2) NOT NULL, -- precio de venta por unidad
-    SubTotal AS (Quantity * UnitPrice) PERSISTED, -- subtotal calculado
+    UnitPrice DECIMAL(18,2) NOT NULL,
+    -- precio de venta por unidad
+    SubTotal AS (Quantity * UnitPrice) PERSISTED,
+    -- subtotal calculado
 
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
 

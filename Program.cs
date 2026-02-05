@@ -32,6 +32,7 @@ builder.Services.AddDbContext<GalaxiumDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
+
 // AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
 
@@ -79,7 +80,12 @@ builder.Services.AddScoped<IValidator<Customer>, CustomerValidator>();
 builder.Services.AddScoped<IProductPhotoRepository, ProductPhotoRepository>();
 builder.Services.AddScoped<IProductPhotoService, ProductPhotoService>();
 
-builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter()); //Esto le dice a .NET que cuando reciba "Purchase", lo mapee a StockReferenceType.Purchase.
+    });
 
 // Configurar CORS **antes** de Build()
 builder.Services.AddCors(options =>

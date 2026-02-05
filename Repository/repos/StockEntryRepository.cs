@@ -6,6 +6,7 @@ using Galaxium.Api.Entities;
 using Galaxium.Api.Repository.Interfaces;
 using Galaxium.API.Data;
 using Galaxium.API.Entities;
+using Galaxium.API.Repository.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
 namespace Galaxium.Api.Repository.repos
@@ -13,9 +14,11 @@ namespace Galaxium.Api.Repository.repos
     public class StockEntryRepository : IStockEntryRepository
     {
         private readonly GalaxiumDbContext _context;
-        public StockEntryRepository(GalaxiumDbContext context)
+        private readonly IProductRepository _productRepository;
+        public StockEntryRepository(GalaxiumDbContext context, IProductRepository productRepository)
         {
             _context = context;
+            _productRepository = productRepository;
         }
         public async Task<IEnumerable<StockEntry>> GetStockEntriesAsync()
         {
@@ -34,52 +37,24 @@ namespace Galaxium.Api.Repository.repos
                 .Include(se => se.User)
                 .FirstOrDefaultAsync(se => se.Id == id);
         }
-        public async Task<StockEntry> CreateStockEntryAsync(StockEntry stockEntry)
+
+        public async Task<StockEntry> CreateStockEntryAsync(StockEntry stockEntry, Product product)
         {
             using var transaction = await _context.Database.BeginTransactionAsync();
 
             try
             {
-                // 1️⃣ Obtener producto primero
-                var product = await _context.Product
-                    .FirstOrDefaultAsync(p => p.Id == stockEntry.ProductId);
+                _context.StockEntry.Add(stockEntry);
+                _context.Product.Update(product);
 
-                if (product == null)
-                    throw new Exception("Producto no encontrado");
-
-                // // 2️⃣ Calcular TotalCost en C# para evitar OUTPUT
-                // stockEntry.TotalCost = stockEntry.Quantity * stockEntry.UnitCost;
-                // stockEntry.CreatedAt = DateTime.UtcNow;
-                // stockEntry.IsActive = true;
-
-                // // 3️⃣ Insertar entrada de stock
-                // _context.StockEntry.Add(stockEntry);
-
-                // 4️⃣ Actualizar stock del producto
-                product.Stock += stockEntry.Quantity;
-
-                // 5️⃣ Registrar movimiento de stock
-                var movement = new StockMovement
-                {
-                    ProductId = stockEntry.ProductId,
-                    UserId = stockEntry.UserId,
-                    MovementType = "IN",
-                    Quantity = stockEntry.Quantity,
-                    Reference = "PURCHASE",
-                    CreatedAt = DateTime.UtcNow
-                };
-                _context.StockMovement.Add(movement);
-
-                // 6️⃣ Guardar todo de una vez
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
-                // 7️⃣ Retornar entrada con relaciones
-                return await _context.StockEntry
-                    .AsNoTracking()
-                    .Include(se => se.Product)
-                    .Include(se => se.User)
-                    .FirstAsync(se => se.Id == stockEntry.Id);
+                // 🔥 Cargar relaciones para evitar NullReferenceException
+                await _context.Entry(stockEntry).Reference(e => e.Product).LoadAsync();
+                await _context.Entry(stockEntry).Reference(e => e.User).LoadAsync();
+
+                return stockEntry;
             }
             catch
             {
@@ -87,5 +62,7 @@ namespace Galaxium.Api.Repository.repos
                 throw;
             }
         }
+
+
     }
 }

@@ -1,4 +1,5 @@
 ﻿using Galaxium.Api.Entities;
+using Galaxium.API.Entities;
 
 namespace Galaxium.Api.Repository.Interfaces
 {
@@ -6,6 +7,9 @@ namespace Galaxium.Api.Repository.Interfaces
     {
         Task<IEnumerable<StockEntry>> GetStockEntriesAsync();
         Task<StockEntry?> GetByIdStockEntryAsync(int id);
-        Task<StockEntry> CreateStockEntryAsync(StockEntry stockEntry); //para ingresar stok de los productos que ya cree 
+         Task<StockEntry> CreateStockEntryAsync(
+                                                                StockEntry stockEntry,
+                                                                Product product
+                                                            );
     }
 }
