@@ -118,5 +118,11 @@ namespace Galaxium.Api.Repository.repos
 
             return await query.ToListAsync();
         }
+         public async Task<Product?> UpdateProductPriceAsync(Product product)
+        {
+            _context.Product.Update(product);
+            await _context.SaveChangesAsync();
+            return product;
+        }
     }
 }

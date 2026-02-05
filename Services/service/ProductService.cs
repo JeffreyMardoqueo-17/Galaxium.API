@@ -87,5 +87,31 @@ namespace Galaxium.Api.Services.service
             return await _productFilterRepository.GetProductsFilterAsync(filter);
         }
 
+        //aqui falta que valide que si el stock es menor a 0 o es cero no puede actuzliarce el precio dle producto porque necesita que ya haya un stokc para saber el rpeico en el que se compro el producto 
+        public async Task<Product?> UpdateProductPriceAsync(int productId, decimal newPrice)
+        {
+            if (newPrice < 0)
+                throw new ArgumentException("El precio no puede ser negativo.");
+
+            var product = await _productRepository.GetProductByIdAsync(productId);
+            if (product == null)
+                return null; // Producto no encontrado
+
+            // Validación de stock: no se puede asignar precio si no hay stock
+            if (product.Stock == null || product.Stock <= 0)
+                throw new InvalidOperationException(
+                    "No se puede asignar precio a un producto sin stock. Por favor registra primero la compra.");
+
+            // Asignar o actualizar precio
+            product.SalePrice = newPrice;
+
+            // Activar si el precio es mayor a 0
+            product.IsActive = newPrice > 0;
+
+            // Guardar cambios en el repositorio
+            return await _productRepository.UpdateProductPriceAsync(product);
+        }
+
+
     }
 }

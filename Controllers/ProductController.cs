@@ -1,4 +1,5 @@
 using AutoMapper;
+using Galaxium.Api.DTOs.Product;
 using Galaxium.Api.Services.Interfaces;
 using Galaxium.API.DTOs.Product;
 using Galaxium.API.Entities;
@@ -113,6 +114,44 @@ namespace Galaxium.Api.Controllers
             return Ok(response);
         }
 
+        // ===============================
+        // PATCH: api/product/price
+        // ===============================
+        [HttpPatch("price")]
+        [Authorize]
+        public async Task<ActionResult<ProductResponseDTO>> UpdateProductPrice(
+     [FromBody] ProductUpdatePriceDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var updatedProduct = await _productService.UpdateProductPriceAsync(dto.ProductId, dto.NewPrice);
+
+                if (updatedProduct == null)
+                    return NotFound($"No se encontró el producto con Id {dto.ProductId}");
+
+                // Convertimos a DTO de respuesta
+                var response = _mapper.Map<ProductResponseDTO>(updatedProduct);
+                return Ok(response);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Captura reglas de negocio, por ejemplo stock insuficiente
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                // Captura errores de validación, por ejemplo precio negativo
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                // Error inesperado
+                return StatusCode(500, new { message = "Ocurrió un error al actualizar el precio" });
+            }
+        }
 
     }
 }

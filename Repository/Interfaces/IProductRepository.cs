@@ -12,6 +12,7 @@ namespace Galaxium.API.Repository.Interfaces
         Task<Product?> GetProductByIdAsync(int productId);
         Task<Product?> AddProductAsync(Product newProduct);
         Task<int> GetLastSkuNumberByCategoryAsync(int categoryId);
-
+        //metodo para asignar o actualizar el precio de un producto
+        Task<Product?> UpdateProductPriceAsync(Product product);
     }
 }

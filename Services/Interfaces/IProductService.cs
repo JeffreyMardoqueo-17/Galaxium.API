@@ -14,5 +14,6 @@ namespace Galaxium.Api.Services.Interfaces
         
      Task<Product> AddProductAsync(Product newProduct, int userId);
         Task<IEnumerable<Product>> GetProductsFilterAsync(ProductFilterModel filter);
+          Task<Product?> UpdateProductPriceAsync(int productId, decimal newPrice);
     }
 }
