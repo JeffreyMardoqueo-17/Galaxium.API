@@ -23,6 +23,7 @@ using Galaxium.Api.Services.Service;
 using FluentValidation;
 using Galaxium.Api.Validators;
 using Galaxium.Api.Services;
+using Galaxium.Api.Services.Rules;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,6 +80,10 @@ builder.Services.AddScoped<IValidator<Customer>, CustomerValidator>();
 //caragar las fotos 
 builder.Services.AddScoped<IProductPhotoRepository, ProductPhotoRepository>();
 builder.Services.AddScoped<IProductPhotoService, ProductPhotoService>();
+
+///----------------------------------------LAS REGLAS LAS REGISTRATE AQUI PARA ABAJO SIEMPRE ------------------------------
+builder.Services.AddScoped<StockEntryRules>();
+
 
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
@@ -192,9 +197,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseMiddleware<ExceptionMiddleware>();
-
+// app.UseMiddleware<RateLimitMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -62,6 +62,14 @@ namespace Galaxium.Api.Repository.repos
                 throw;
             }
         }
+        public async Task<StockEntry?> GetLastEntryByProductIdAsync(int productId)
+{
+    return await _context.StockEntry
+        .Where(se => se.ProductId == productId)
+        .OrderByDescending(se => se.CreatedAt) //  para saber la fecha en la que entro 
+        .FirstOrDefaultAsync();
+}
+
 
 
     }

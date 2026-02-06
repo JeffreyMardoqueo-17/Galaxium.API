@@ -7,9 +7,10 @@ namespace Galaxium.Api.Repository.Interfaces
     {
         Task<IEnumerable<StockEntry>> GetStockEntriesAsync();
         Task<StockEntry?> GetByIdStockEntryAsync(int id);
-         Task<StockEntry> CreateStockEntryAsync(
-                                                                StockEntry stockEntry,
-                                                                Product product
-                                                            );
+        Task<StockEntry> CreateStockEntryAsync(
+                                                               StockEntry stockEntry,
+                                                               Product product
+                                                           );
+    Task<StockEntry?> GetLastEntryByProductIdAsync(int productId);
     }
 }

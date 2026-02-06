@@ -32,7 +32,9 @@ namespace Galaxium.API.Middlewares
             }
         }
 
-        private async Task HandleExceptionAsync(HttpContext context, Exception ex)
+        private async Task HandleExceptionAsync(
+            HttpContext context,
+            Exception ex)
         {
             // ==========================
             // Request context
@@ -43,24 +45,31 @@ namespace Galaxium.API.Middlewares
             var traceId = context.TraceIdentifier;
 
             // ==========================
-            // User context (if authenticated)
+            // User context
             // ==========================
             var userId = context.User?.Claims?
-                .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)?.Value;
+                .FirstOrDefault(c => c.Type == ClaimTypes.NameIdentifier)
+                ?.Value;
 
             var userName = context.User?.Identity?.Name;
 
             // ==========================
-            // Logging (full context)
+            // 🔥 LOG DETALLADO (Console + Providers)
             // ==========================
             _logger.LogError(ex,
-                "Unhandled exception occurred | " +
-                "Endpoint: {Endpoint} | Query: {Query} | UserId: {UserId} | UserName: {UserName} | TraceId: {TraceId}",
+                @"Unhandled exception occurred
+                  Endpoint: {Endpoint}
+                  Query: {Query}
+                  UserId: {UserId}
+                  UserName: {UserName}
+                  TraceId: {TraceId}
+                  Message: {Message}",
                 endpoint,
                 queryString,
                 userId ?? "Anonymous",
                 userName ?? "Anonymous",
-                traceId
+                traceId,
+                ex.Message
             );
 
             // ==========================
@@ -77,7 +86,13 @@ namespace Galaxium.API.Middlewares
                 Timestamp = DateTime.UtcNow
             };
 
-            var json = JsonSerializer.Serialize(response);
+            var json = JsonSerializer.Serialize(
+                response,
+                new JsonSerializerOptions
+                {
+                    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+                });
+
             await context.Response.WriteAsync(json);
         }
 
@@ -89,10 +104,21 @@ namespace Galaxium.API.Middlewares
             return ex switch
             {
                 BusinessException be => be.StatusCode,
-                KeyNotFoundException => StatusCodes.Status404NotFound,
-                UnauthorizedAccessException => StatusCodes.Status401Unauthorized,
-                ArgumentException => StatusCodes.Status400BadRequest,
-                _ => StatusCodes.Status500InternalServerError
+
+                KeyNotFoundException =>
+                    StatusCodes.Status404NotFound,
+
+                UnauthorizedAccessException =>
+                    StatusCodes.Status401Unauthorized,
+
+                ArgumentException =>
+                    StatusCodes.Status400BadRequest,
+
+                InvalidOperationException =>
+                    StatusCodes.Status409Conflict, // 🔥 reglas negocio
+
+                _ =>
+                    StatusCodes.Status500InternalServerError
             };
         }
 
@@ -103,11 +129,23 @@ namespace Galaxium.API.Middlewares
         {
             return ex switch
             {
-                BusinessException => ex.Message,
-                KeyNotFoundException => "The requested resource was not found.",
-                UnauthorizedAccessException => "Unauthorized access.",
-                ArgumentException => ex.Message,
-                _ => "An unexpected error occurred on the server."
+                BusinessException =>
+                    ex.Message,
+
+                KeyNotFoundException =>
+                    "The requested resource was not found.",
+
+                UnauthorizedAccessException =>
+                    "Unauthorized access.",
+
+                ArgumentException =>
+                    ex.Message,
+
+                InvalidOperationException =>
+                    ex.Message, // 🔥 reglas negocio visibles
+
+                _ =>
+                    "An unexpected error occurred on the server."
             };
         }
 
@@ -117,8 +155,13 @@ namespace Galaxium.API.Middlewares
         private sealed class ErrorResponse
         {
             public int StatusCode { get; init; }
-            public string Message { get; init; } = string.Empty;
-            public string TraceId { get; init; } = string.Empty;
+
+            public string Message { get; init; }
+                = string.Empty;
+
+            public string TraceId { get; init; }
+                = string.Empty;
+
             public DateTime Timestamp { get; init; }
         }
     }
