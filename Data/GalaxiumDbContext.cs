@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Galaxium.API.Entities;
+using Galaxium.Api.Entities;
 
 namespace Galaxium.API.Data
 {
@@ -31,35 +32,74 @@ namespace Galaxium.API.Data
         // Ventas
         // ==========================
         public DbSet<Sale> Sale => Set<Sale>();
-        public DbSet<SaleDetail> SaleDetails => Set<SaleDetail>();
+        public DbSet<SaleDetail> SaleDetail => Set<SaleDetail>();
 
         // ==========================
         // Inventario
         // ==========================
-        public DbSet<StockMovement> StockMovements => Set<StockMovement>();
         public DbSet<RefreshToken> RefreshToken => Set<RefreshToken>();
+        public DbSet<StockEntry> StockEntry => Set<StockEntry>();
+        public DbSet<PaymentMethod> PaymentMethod => Set<PaymentMethod>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
-{
-    base.OnModelCreating(modelBuilder);
+        {
+            base.OnModelCreating(modelBuilder);
 
-    modelBuilder.Entity<Product>(entity =>
-    {
-        entity.Property(p => p.CostPrice).HasColumnType("decimal(18,2)");
-        entity.Property(p => p.SalePrice).HasColumnType("decimal(18,2)");
-    });
+            modelBuilder.Entity<User>(entity =>
+            {
+                entity.HasMany(u => u.Sales)
+                    .WithOne(s => s.User)
+                    .HasForeignKey(s => s.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
-    modelBuilder.Entity<Sale>(entity =>
-    {
-        entity.Property(s => s.Total).HasColumnType("decimal(18,2)");
-    });
+                entity.HasMany(u => u.ProductsCreated)
+                    .WithOne(p => p.CreatedByUser)
+                    .HasForeignKey(p => p.CreatedByUserId)
+                    .OnDelete(DeleteBehavior.Restrict);
 
-    modelBuilder.Entity<SaleDetail>(entity =>
-    {
-        entity.Property(sd => sd.SubTotal).HasColumnType("decimal(18,2)");
-        entity.Property(sd => sd.UnitPrice).HasColumnType("decimal(18,2)");
-    });
-}
+                // SaleDetail does not have a UserId column in the schema.
+                entity.Ignore(u => u.SaleDetails);
+            });
+
+            // Producto
+            modelBuilder.Entity<Product>(entity =>
+            {
+                entity.Property(p => p.CostPrice).HasColumnType("decimal(18,2)");
+                entity.Property(p => p.SalePrice).HasColumnType("decimal(18,2)");
+            });
+
+            // Venta
+            modelBuilder.Entity<Sale>(entity =>
+            {
+                entity.Property(s => s.SubTotal).HasColumnType("decimal(18,2)");
+                entity.Property(s => s.Discount).HasColumnType("decimal(18,2)");
+                entity.Property(s => s.Total).HasColumnType("decimal(18,2)");
+            });
+
+            // Detalles de venta
+            modelBuilder.Entity<SaleDetail>(entity =>
+            {
+                // SubTotal es columna calculada en SQL Server
+                entity.Property(sd => sd.SubTotal)
+                    .HasColumnType("decimal(18,2)") 
+                    .HasComputedColumnSql("([Quantity] * [UnitPrice])", stored: true);
+                
+                entity.Property(sd => sd.UnitPrice).HasColumnType("decimal(18,2)");
+                entity.Property(sd => sd.UnitCost).HasColumnType("decimal(18,2)");
+
+                entity.HasOne(sd => sd.Sale)
+                    .WithMany(s => s.Details)
+                    .HasForeignKey(sd => sd.SaleId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(sd => sd.Product)
+                    .WithMany(p => p.SaleDetails)
+                    .HasForeignKey(sd => sd.ProductId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+        }
+
 
     }
 }

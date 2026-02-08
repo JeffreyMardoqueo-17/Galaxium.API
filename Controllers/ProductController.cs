@@ -1,4 +1,5 @@
 using AutoMapper;
+using Galaxium.Api.DTOs.Product;
 using Galaxium.Api.Services.Interfaces;
 using Galaxium.API.DTOs.Product;
 using Galaxium.API.Entities;
@@ -58,22 +59,22 @@ namespace Galaxium.Api.Controllers
         [HttpPost]
         [Authorize]
         public async Task<ActionResult<ProductResponseDTO>> CreateProduct(
-    [FromBody] ProductCreateRequestDTO request)
+         [FromBody] ProductCreateRequestDTO request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            var productEntity = _mapper.Map<Product>(request);
-
-            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)
-                ?? throw new UnauthorizedAccessException("User not authenticated.");
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+            if (userIdClaim == null)
+                return Unauthorized("Token inválido: no contiene UserId");
 
             if (!int.TryParse(userIdClaim.Value, out var userId))
-                throw new UnauthorizedAccessException("Invalid user id.");
+                return Unauthorized("UserId inválido en el token");
 
-            productEntity.CreatedByUserId = userId;
+            var productEntity = _mapper.Map<Product>(request);
 
-            var createdProduct = await _productService.AddProductAsync(productEntity);
+            var createdProduct = await _productService.AddProductAsync(productEntity, userId);
+
             var response = _mapper.Map<ProductResponseDTO>(createdProduct);
 
             return CreatedAtAction(
@@ -82,6 +83,7 @@ namespace Galaxium.Api.Controllers
                 response
             );
         }
+
 
         // ===============================
         // GET: api/product/filter
@@ -112,6 +114,44 @@ namespace Galaxium.Api.Controllers
             return Ok(response);
         }
 
+        // ===============================
+        // PATCH: api/product/price
+        // ===============================
+        [HttpPatch("price")]
+        [Authorize]
+        public async Task<ActionResult<ProductResponseDTO>> UpdateProductPrice(
+     [FromBody] ProductUpdatePriceDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                var updatedProduct = await _productService.UpdateProductPriceAsync(dto.ProductId, dto.NewPrice);
+
+                if (updatedProduct == null)
+                    return NotFound($"No se encontró el producto con Id {dto.ProductId}");
+
+                // Convertimos a DTO de respuesta
+                var response = _mapper.Map<ProductResponseDTO>(updatedProduct);
+                return Ok(response);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Captura reglas de negocio, por ejemplo stock insuficiente
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (ArgumentException ex)
+            {
+                // Captura errores de validación, por ejemplo precio negativo
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception)
+            {
+                // Error inesperado
+                return StatusCode(500, new { message = "Ocurrió un error al actualizar el precio" });
+            }
+        }
 
     }
 }

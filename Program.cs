@@ -20,6 +20,12 @@ using Galaxium.Api.Repository.repos;
 using Galaxium.Api.Repository.Interfaces;
 using Galaxium.API.Repository.repos;
 using Galaxium.Api.Services.Service;
+using FluentValidation;
+using Galaxium.Api.Validators;
+using Galaxium.Api.Services;
+using Galaxium.Api.Services.Rules;
+using Galaxium.Api.Services.Implementations;
+using Galaxium.API.Repositories.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -28,6 +34,7 @@ builder.Services.AddDbContext<GalaxiumDbContext>(options =>
 {
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
+
 
 // AutoMapper
 builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
@@ -59,11 +66,45 @@ builder.Services.AddScoped<IProductService, ProductService>();
 builder.Services.AddScoped<ISkuGenerator, SkuGenerator>();
 builder.Services.AddScoped<IProductFilterRepository, ProductRepository>();
 
+//servicios de usaurios
+builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
+builder.Services.AddScoped<ICustomerService, CustomerService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+//para el stokEntry
+builder.Services.AddScoped<IStockEntryRepository, StockEntryRepository>();
+builder.Services.AddScoped<IStockEntryService, StockEntryService>();
+
+//validaciones
+builder.Services.AddScoped<IValidator<Customer>, CustomerValidator>();
+
+
 //caragar las fotos 
 builder.Services.AddScoped<IProductPhotoRepository, ProductPhotoRepository>();
 builder.Services.AddScoped<IProductPhotoService, ProductPhotoService>();
 
-builder.Services.AddControllers();
+//servicios de ventas
+
+builder.Services.AddScoped<IPaymentMethodService, PaymentMethodService>();
+builder.Services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
+
+builder.Services.AddScoped<ISaleService, SaleService>();
+builder.Services.AddScoped<ISaleRepository, SaleRepository>();
+
+builder.Services.AddScoped<ISaleDetailService, SaleDetailService>();
+builder.Services.AddScoped<ISaleDetailRepository, SaleDetailRepository>();
+///----------------------------------------LAS REGLAS LAS REGISTRATE AQUI PARA ABAJO SIEMPRE ------------------------------
+builder.Services.AddScoped<StockEntryRules>();
+builder.Services.AddScoped<SaleRules>();
+builder.Services.AddScoped<SaleDetailsRules>();
+
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.Converters.Add(
+            new System.Text.Json.Serialization.JsonStringEnumConverter()); //Esto le dice a .NET que cuando reciba "Purchase", lo mapee a StockReferenceType.Purchase.
+    });
 
 // Configurar CORS **antes** de Build()
 builder.Services.AddCors(options =>
@@ -170,9 +211,8 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
 app.UseMiddleware<ExceptionMiddleware>();
-
+// app.UseMiddleware<RateLimitMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
 

@@ -14,39 +14,37 @@ namespace Galaxium.Api.Mappings
             // CREATE → ENTITY
             // ===============================
             CreateMap<ProductCreateRequestDTO, Product>()
-                .ForMember(dest => dest.Stock,
-                    opt => opt.MapFrom(src => src.InitialStock))
-                .ForMember(dest => dest.CreatedAt,
-                    opt => opt.MapFrom(_ => DateTime.UtcNow))
-                .ForMember(dest => dest.SKU,
-                    opt => opt.Ignore()) // 🔒 SKU solo backend
-                .ForMember(dest => dest.Id,
-                    opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedByUserId,
-                    opt => opt.Ignore())
-                .ForMember(dest => dest.Category,
-                    opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedByUser,
-                    opt => opt.Ignore())
-                .ForMember(dest => dest.SaleDetails,
-                    opt => opt.Ignore())
-                .ForMember(dest => dest.StockMovements,
-                    opt => opt.Ignore());
+            // 🔒 Estado y negocio: NO en AutoMapper
+            .ForMember(dest => dest.Stock, opt => opt.Ignore())
+            .ForMember(dest => dest.CostPrice, opt => opt.Ignore())
+            .ForMember(dest => dest.SalePrice, opt => opt.Ignore())
+            .ForMember(dest => dest.IsActive, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+
+            // 🔒 Claves y relaciones
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.SKU, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedByUserId, opt => opt.Ignore())
+            .ForMember(dest => dest.Category, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedByUser, opt => opt.Ignore())
+            .ForMember(dest => dest.SaleDetails, opt => opt.Ignore());
+
 
             // ===============================
             // UPDATE → ENTITY
             // ===============================
             CreateMap<ProductUpdateRequestDTO, Product>()
-                .ForMember(dest => dest.Id, opt => opt.Ignore())
-                .ForMember(dest => dest.SKU, opt => opt.Ignore()) // 🔒
-                .ForMember(dest => dest.Stock, opt => opt.Ignore())
-                .ForMember(dest => dest.CostPrice, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedByUserId, opt => opt.Ignore())
-                .ForMember(dest => dest.Category, opt => opt.Ignore())
-                .ForMember(dest => dest.CreatedByUser, opt => opt.Ignore())
-                .ForMember(dest => dest.SaleDetails, opt => opt.Ignore())
-                .ForMember(dest => dest.StockMovements, opt => opt.Ignore());
+            .ForMember(dest => dest.Id, opt => opt.Ignore())
+            .ForMember(dest => dest.SKU, opt => opt.Ignore())
+            .ForMember(dest => dest.Stock, opt => opt.Ignore())
+            .ForMember(dest => dest.CostPrice, opt => opt.Ignore())
+            .ForMember(dest => dest.SalePrice, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedByUserId, opt => opt.Ignore())
+            .ForMember(dest => dest.Category, opt => opt.Ignore())
+            .ForMember(dest => dest.CreatedByUser, opt => opt.Ignore())
+            .ForMember(dest => dest.SaleDetails, opt => opt.Ignore());
+
 
             // ===============================
             // ENTITY → RESPONSE
