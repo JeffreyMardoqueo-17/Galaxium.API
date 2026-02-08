@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Galaxium.Api.Entities;
 
 namespace Galaxium.API.Entities
 {
@@ -7,18 +8,37 @@ namespace Galaxium.API.Entities
     {
         public int Id { get; set; }
 
-        // FK
+        /* ============================
+           FOREIGN KEYS
+        ============================ */
         public int? CustomerId { get; set; }
-        public int SellerUserId { get; set; }
+        public int UserId { get; set; }
+        public int PaymentMethodId { get; set; }
 
-        public DateTime SaleDate { get; set; }
+        /* ============================
+           FINANCIAL DATA
+        ============================ */
+        public decimal SubTotal { get; set; }
+        public decimal Discount { get; set; }
         public decimal Total { get; set; }
-        public string PaymentMethod { get; set; } = null!;
 
-        // 🔹 Navegaciones
+        /* ============================
+           SALE INFO
+        ============================ */
+        public DateTime SaleDate { get; set; }
+        public string Status { get; set; } = "COMPLETED";
+        public string? InvoiceNumber { get; set; }
+
+        public DateTime CreatedAt { get; set; }
+
+        /* ============================
+           NAVIGATION PROPERTIES
+        ============================ */
         public Customer? Customer { get; set; }
-        public User SellerUser { get; set; } = null!;
+        public User User { get; set; } = null!;
+        public PaymentMethod PaymentMethod { get; set; } = null!;
 
-        public ICollection<SaleDetail> Details { get; set; } = new List<SaleDetail>();
+        public ICollection<SaleDetail> Details { get; set; }
+            = new List<SaleDetail>();
     }
 }

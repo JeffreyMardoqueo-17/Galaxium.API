@@ -163,35 +163,6 @@ CREATE TABLE StockEntry
 );
 GO
 
-
-/* ============================================================
-   TABLA: StockMovement
-   Descripción: Movimientos de stock (entradas o salidas)
-   Útil para auditoría y control histórico
-============================================================ */
-CREATE TABLE StockMovement
-(
-    Id INT IDENTITY(1,1) PRIMARY KEY,
-    ProductId INT NOT NULL,
-    UserId INT NOT NULL,
-    -- quién hizo el movimiento
-
-    MovementType VARCHAR(10) NOT NULL,
-    -- 'IN' / 'OUT'
-    Quantity INT NOT NULL,
-    -- cantidad de producto movido
-    ReferenceType VARCHAR(50) NOT NULL,
-    -- 'SALE', 'PURCHASE', 'ADJUSTMENT'
-    ReferenceId INT NULL,
-    -- opcional, id de la venta o stock entry relacionado
-
-    CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
-
-    CONSTRAINT FK_StockMovement_Product FOREIGN KEY (ProductId) REFERENCES Product(Id),
-    CONSTRAINT FK_StockMovement_User FOREIGN KEY (UserId) REFERENCES [User](Id)
-);
-GO
-
 /* ============================================================
    TABLA: Customer
    Descripción: Clientes para registro de ventas
@@ -205,50 +176,100 @@ CREATE TABLE Customer
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE()
 );
 GO
+/* ============================================================
+   TABLA: PaymentMethod
+   Descripción: Catálogo de métodos de pago
+============================================================ */
+CREATE TABLE PaymentMethod
+(
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+
+    Name VARCHAR(50) NOT NULL,
+    -- Ej: Efectivo, Transferencia, Tarjeta
+
+    Description VARCHAR(150) NULL,
+
+    IsActive BIT NOT NULL DEFAULT 1,
+
+    CreatedAt DATETIME NOT NULL DEFAULT GETDATE()
+);
+GO
 
 /* ============================================================
    TABLA: Sale
-   Descripción: Venta realizada
+   Descripción: Cabecera de venta
 ============================================================ */
 CREATE TABLE Sale
 (
     Id INT IDENTITY(1,1) PRIMARY KEY,
+
     CustomerId INT NULL,
-    -- cliente opcional
-    SellerUserId INT NOT NULL,
-    -- vendedor que realizó la venta
+    UserId INT NOT NULL, --el administrador o vendedor que realiza la venta
+    -- Método de pago (FK catálogo)
+    PaymentMethodId INT NOT NULL,
 
     SaleDate DATETIME NOT NULL DEFAULT GETDATE(),
-    Total DECIMAL(18,2) NOT NULL,
-    -- total de la venta
-    PaymentMethod VARCHAR(50) NOT NULL,
-    -- forma de pago
 
+    -- Totales financieros
+    SubTotal DECIMAL(18,2) NOT NULL DEFAULT 0,
+    Discount DECIMAL(18,2) NOT NULL DEFAULT 0,
+    Total DECIMAL(18,2) NOT NULL,
+
+    -- Estado de la venta
+    Status VARCHAR(30) NOT NULL DEFAULT 'COMPLETED',
+    -- COMPLETED | CANCELLED | REFUNDED
+
+    -- Facturación
+    InvoiceNumber VARCHAR(50) NULL,
+
+    -- Auditoría
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
 
-    CONSTRAINT FK_Sale_Customer FOREIGN KEY (CustomerId) REFERENCES Customer(Id),
-    CONSTRAINT FK_Sale_User FOREIGN KEY (SellerUserId) REFERENCES [User](Id)
+    /* ============================
+       FOREIGN KEYS
+    ============================ */
+    CONSTRAINT FK_Sale_Customer 
+        FOREIGN KEY (CustomerId) REFERENCES Customer(Id),
+
+    CONSTRAINT FK_Sale_User 
+        FOREIGN KEY (UserId) REFERENCES [User](Id),
+
+    CONSTRAINT FK_Sale_PaymentMethod 
+        FOREIGN KEY (PaymentMethodId) REFERENCES PaymentMethod(Id)
 );
 GO
 
 /* ============================================================
    TABLA: SaleDetail
-   Descripción: Detalle de cada producto vendido
+   Descripción: Detalle de productos vendidos
 ============================================================ */
 CREATE TABLE SaleDetail
 (
     Id INT IDENTITY(1,1) PRIMARY KEY,
+
     SaleId INT NOT NULL,
     ProductId INT NOT NULL,
+
     Quantity INT NOT NULL,
+
+    -- Precio de venta histórico
     UnitPrice DECIMAL(18,2) NOT NULL,
-    -- precio de venta por unidad
+
+    -- Costo histórico (para utilidad)
+    UnitCost DECIMAL(18,2) NOT NULL,
+
+    -- Subtotal persistido
     SubTotal AS (Quantity * UnitPrice) PERSISTED,
-    -- subtotal calculado
 
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
 
-    CONSTRAINT FK_SaleDetail_Sale FOREIGN KEY (SaleId) REFERENCES Sale(Id),
-    CONSTRAINT FK_SaleDetail_Product FOREIGN KEY (ProductId) REFERENCES Product(Id)
+    /* ============================
+       FOREIGN KEYS
+    ============================ */
+    CONSTRAINT FK_SaleDetail_Sale 
+        FOREIGN KEY (SaleId) REFERENCES Sale(Id),
+
+    CONSTRAINT FK_SaleDetail_Product 
+        FOREIGN KEY (ProductId) REFERENCES Product(Id)
 );
 GO

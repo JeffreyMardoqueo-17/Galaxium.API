@@ -24,6 +24,8 @@ using FluentValidation;
 using Galaxium.Api.Validators;
 using Galaxium.Api.Services;
 using Galaxium.Api.Services.Rules;
+using Galaxium.Api.Services.Implementations;
+using Galaxium.API.Repositories.Implementations;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -81,8 +83,20 @@ builder.Services.AddScoped<IValidator<Customer>, CustomerValidator>();
 builder.Services.AddScoped<IProductPhotoRepository, ProductPhotoRepository>();
 builder.Services.AddScoped<IProductPhotoService, ProductPhotoService>();
 
+//servicios de ventas
+
+builder.Services.AddScoped<IPaymentMethodService, PaymentMethodService>();
+builder.Services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
+
+builder.Services.AddScoped<ISaleService, SaleService>();
+builder.Services.AddScoped<ISaleRepository, SaleRepository>();
+
+builder.Services.AddScoped<ISaleDetailService, SaleDetailService>();
+builder.Services.AddScoped<ISaleDetailRepository, SaleDetailRepository>();
 ///----------------------------------------LAS REGLAS LAS REGISTRATE AQUI PARA ABAJO SIEMPRE ------------------------------
 builder.Services.AddScoped<StockEntryRules>();
+builder.Services.AddScoped<SaleRules>();
+builder.Services.AddScoped<SaleDetailsRules>();
 
 
 builder.Services.AddControllers()

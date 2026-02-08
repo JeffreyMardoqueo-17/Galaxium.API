@@ -26,7 +26,6 @@ namespace Galaxium.API.Entities
     public ProductCategory Category { get; set; } = null!;
     public User CreatedByUser { get; set; } = null!;
     public ICollection<SaleDetail> SaleDetails { get; set; } = new List<SaleDetail>();
-    public ICollection<StockMovement> StockMovements { get; set; } = new List<StockMovement>();
 }
 
 }

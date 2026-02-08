@@ -27,8 +27,7 @@ namespace Galaxium.Api.Mappings
             .ForMember(dest => dest.CreatedByUserId, opt => opt.Ignore())
             .ForMember(dest => dest.Category, opt => opt.Ignore())
             .ForMember(dest => dest.CreatedByUser, opt => opt.Ignore())
-            .ForMember(dest => dest.SaleDetails, opt => opt.Ignore())
-            .ForMember(dest => dest.StockMovements, opt => opt.Ignore());
+            .ForMember(dest => dest.SaleDetails, opt => opt.Ignore());
 
 
             // ===============================
@@ -44,8 +43,7 @@ namespace Galaxium.Api.Mappings
             .ForMember(dest => dest.CreatedByUserId, opt => opt.Ignore())
             .ForMember(dest => dest.Category, opt => opt.Ignore())
             .ForMember(dest => dest.CreatedByUser, opt => opt.Ignore())
-            .ForMember(dest => dest.SaleDetails, opt => opt.Ignore())
-            .ForMember(dest => dest.StockMovements, opt => opt.Ignore());
+            .ForMember(dest => dest.SaleDetails, opt => opt.Ignore());
 
 
             // ===============================

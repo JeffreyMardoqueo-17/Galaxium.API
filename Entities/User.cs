@@ -19,7 +19,6 @@ namespace Galaxium.API.Entities
     public ICollection<Product> ProductsCreated { get; set; } = new List<Product>();
     public ICollection<Sale> Sales { get; set; } = new List<Sale>();
     public ICollection<SaleDetail> SaleDetails { get; set; } = new List<SaleDetail>();
-    public ICollection<StockMovement> StockMovements { get; set; } = new List<StockMovement>();
 }
 
 }
