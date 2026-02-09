@@ -5,6 +5,7 @@ namespace Galaxium.API.DTOs.Product
    public record ProductResponseDTO(
     int Id,
     string Name,
+string? Barcode,   
     string SKU,
     decimal? CostPrice,
     decimal? SalePrice,

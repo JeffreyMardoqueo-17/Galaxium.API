@@ -8,7 +8,7 @@ namespace Galaxium.API.DTOs.Product
    public record ProductFilterRequestDTO(
         int? CategoryId,
         string? Name,
-
+string? Barcode,   // 
         decimal? MinPrice,
         decimal? MaxPrice,
 

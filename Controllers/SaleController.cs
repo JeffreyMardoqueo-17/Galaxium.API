@@ -26,16 +26,28 @@ namespace Galaxium.Api.Controllers
         // ======================================================
         // POST: api/Sale
         // Crear una nueva venta con detalles
-        // Ejemplo de JSON para probar:
+        // Ejemplo de JSON para probar (efectivo):
         /*
         {
             "customerId": 1,
-            "sellerUserId": 2,
             "paymentMethodId": 1,
             "discount": 5,
+            "amountPaid": 100,
             "details": [
                 { "productId": 1, "quantity": 2 },
                 { "productId": 3, "quantity": 1 }
+            ]
+        }
+        */
+        // Ejemplo de JSON para probar (tarjeta u otro):
+        /*
+        {
+            "customerId": 1,
+            "paymentMethodId": 2,
+            "discount": 0,
+            "amountPaid": null,
+            "details": [
+                { "productId": 1, "quantity": 2 }
             ]
         }
         */

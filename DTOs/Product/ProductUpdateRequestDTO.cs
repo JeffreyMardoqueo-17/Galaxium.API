@@ -7,6 +7,7 @@ namespace Galaxium.API.DTOs.Product
     string Name,
     decimal SalePrice,
     int MinimumStock,
+   string? Barcode,   // 
     bool IsActive
 );
 }

@@ -21,6 +21,8 @@ namespace Galaxium.Api.Mappings
                     src.SubTotal,
                     src.Discount,
                     src.Total,
+                    src.AmountPaid,
+                    src.ChangeAmount,
                     src.Status,
                     src.InvoiceNumber,
                     src.SaleDate,
@@ -47,6 +49,8 @@ namespace Galaxium.Api.Mappings
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.SubTotal, opt => opt.Ignore())
                 .ForMember(dest => dest.Total, opt => opt.Ignore())
+                .ForMember(dest => dest.AmountPaid, opt => opt.MapFrom(src => src.AmountPaid ?? 0))
+                .ForMember(dest => dest.ChangeAmount, opt => opt.Ignore()) // Calculado en el servicio
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(_ => "COMPLETED"))
                 .ForMember(dest => dest.InvoiceNumber, opt => opt.Ignore())
                 .ForMember(dest => dest.SaleDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
