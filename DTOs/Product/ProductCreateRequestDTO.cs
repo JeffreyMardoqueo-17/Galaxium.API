@@ -5,7 +5,8 @@ namespace Galaxium.API.DTOs.Product
   public record ProductCreateRequestDTO(
       int CategoryId,
       string Name,
-      int MinimumStock
+      int MinimumStock,
+       string? Barcode   // 👈 NUEVO
   );
 
 

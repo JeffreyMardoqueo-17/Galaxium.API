@@ -93,11 +93,12 @@ CREATE TABLE Product
     Id INT IDENTITY(1,1) PRIMARY KEY,
     CategoryId INT NOT NULL,
     CreatedByUserId INT NOT NULL,
-
+     Barcode VARCHAR(50) NULL UNIQUE, 
     Name VARCHAR(150) NOT NULL,
     SKU VARCHAR(50) NOT NULL UNIQUE,
     CostPrice DECIMAL(18,2) NULL,
     SalePrice DECIMAL(18,2) NULL,
+
 
     Stock INT NOT NULL DEFAULT 0,
     MinimumStock INT NOT NULL DEFAULT 5,
