@@ -204,7 +204,8 @@ CREATE TABLE Sale
     Id INT IDENTITY(1,1) PRIMARY KEY,
 
     CustomerId INT NULL,
-    UserId INT NOT NULL, --el administrador o vendedor que realiza la venta
+    UserId INT NOT NULL,
+    --el administrador o vendedor que realiza la venta
     -- Método de pago (FK catálogo)
     PaymentMethodId INT NOT NULL,
 
@@ -212,7 +213,11 @@ CREATE TABLE Sale
 
     -- Totales financieros
     SubTotal DECIMAL(18,2) NOT NULL DEFAULT 0,
-    Discount DECIMAL(18,2) NOT NULL DEFAULT 0,
+    Discount DECIMAL(18,2)  NOT NULL DEFAULT 0,
+    AmountPaid DECIMAL(18,2) NULL DEFAULT 0,
+    -- dinero recibido
+    ChangeAmount DECIMAL(18,2) NULL DEFAULT 0,
+    -- vuelto entregado
     Total DECIMAL(18,2) NOT NULL,
 
     -- Estado de la venta

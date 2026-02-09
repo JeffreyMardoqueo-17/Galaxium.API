@@ -10,6 +10,7 @@ namespace Galaxium.API.DTOs
         int? CustomerId,
         int PaymentMethodId,
         decimal Discount,
+        decimal? AmountPaid,  // Cantidad pagada por el cliente (solo para efectivo)
         List<SaleDetailCreateDto> Details
     );
 }

@@ -39,7 +39,7 @@ namespace Galaxium.Api.Services.Implementations
         //   ]
         // }
 
-        // ============================================
+        // ============================================ aqui tengo qeu agregar cuanto dinero me dio cada cliente para calcular el vuelto
         public async Task<Sale> CreateSaleAsync(Sale sale, IEnumerable<SaleDetail> saleDetails)
         {
             // 1️⃣ Validaciones generales
@@ -47,7 +47,7 @@ namespace Galaxium.Api.Services.Implementations
             _saleRules.ValidateSeller(sale.UserId);
             _saleRules.ValidatePaymentMethod(sale.PaymentMethodId);
 
-            // 2️⃣ Validar cada detalle de producto y cargar Product desde DB
+            //  Validar cada detalle de producto y cargar Product desde DB
             foreach (var detail in saleDetails)
             {
                 // Traer producto desde repositorio
@@ -55,11 +55,13 @@ namespace Galaxium.Api.Services.Implementations
                 if (product == null)
                     throw new InvalidOperationException($"Producto Id {detail.ProductId} no existe.");
 
-                // ⚠️ NO asignamos detail.Product para evitar conflictos en EF Core tracking
+                // no asigno detail.Product para evitar conflictos en EF Core tracking
 
-                // Validaciones
+                // ⚠️ ADVERTENCIA: Producto inactivo en lugar de excepción
                 if (!product.IsActive)
-                    throw new InvalidOperationException($"El producto '{product.Name}' está inactivo.");
+                {
+                    Console.WriteLine($"⚠️ ADVERTENCIA: El producto '{product.Name}' (Id: {product.Id}) está inactivo pero se permitirá la venta.");
+                }
 
                 if (!product.SalePrice.HasValue || product.SalePrice.Value <= 0)
                     throw new InvalidOperationException($"El producto '{product.Name}' no tiene precio asignado.");
@@ -75,7 +77,7 @@ namespace Galaxium.Api.Services.Implementations
                 detail.UnitCost = product.CostPrice ?? 0m;
             }
 
-            // 3️⃣ Calcular totales de la venta
+            // calcula totales de la venta
             // Calculamos SubTotal manualmente antes de guardar
             sale.SubTotal = saleDetails.Sum(d => d.Quantity * d.UnitPrice);
             _saleRules.ValidateDiscount(sale.Discount);
@@ -83,6 +85,21 @@ namespace Galaxium.Api.Services.Implementations
             sale.Total = _saleRules.CalculateTotal(sale.SubTotal, sale.Discount);
 
             _saleRules.ValidateTotal(sale.Total);
+
+            // 5️⃣ Validar AmountPaid y calcular ChangeAmount
+            _saleRules.ValidateAmountPaid(sale.AmountPaid, sale.Total, sale.PaymentMethodId);
+            
+            // Si el método de pago es efectivo (ID = 1), calcular el cambio
+            if (sale.PaymentMethodId == 1 && sale.AmountPaid > 0)
+            {
+                sale.ChangeAmount = _saleRules.CalculateChange(sale.AmountPaid, sale.Total);
+            }
+            else
+            {
+                // Para otros métodos de pago, AmountPaid y ChangeAmount son 0
+                sale.AmountPaid = 0;
+                sale.ChangeAmount = 0;
+            }
 
             sale.InvoiceNumber = _saleRules.GenerateInvoiceNumber();
             sale.SaleDate = DateTime.UtcNow;
@@ -131,10 +148,7 @@ namespace Galaxium.Api.Services.Implementations
 
             var sales = await _saleRepository.GetByDateRangeAsync(start, end);
 
-            if (sales == null || !sales.Any())
-                throw new InvalidOperationException("No se encontraron ventas en el rango especificado.");
-
-            return sales;
+            return sales ?? Enumerable.Empty<Sale>();
         }
 
 
@@ -145,10 +159,7 @@ namespace Galaxium.Api.Services.Implementations
 
             var sales = await _saleRepository.GetByCustomerAsync(customerId);
 
-            if (sales == null || !sales.Any())
-                throw new InvalidOperationException($"No se encontraron ventas para el cliente Id {customerId}.");
-
-            return sales;
+            return sales ?? Enumerable.Empty<Sale>();
         }
 
     }

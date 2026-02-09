@@ -33,23 +33,11 @@ namespace Galaxium.Api.Services.Implementations
 
             var details = await _saleDetailRepository.GetBySaleIdAsync(saleId);
 
-            if (details == null || !details.Any())
-                throw new InvalidOperationException($"No se encontraron detalles para la venta Id {saleId}.");
-
-            // Validar cada detalle según reglas de negocio
-            foreach (var detail in details)
-            {
-                _saleDetailRules.ValidateProductIsActive(detail.Product.IsActive);
-                _saleDetailRules.ValidateProductHasPrice(detail.Product.SalePrice);
-                _saleDetailRules.ValidateQuantity(detail.Quantity);
-                _saleDetailRules.ValidateQuantityAgainstStock(detail.Quantity, detail.Product.Stock);
-
-                // Asignar UnitPrice y UnitCost si no están ya
-                detail.UnitPrice = detail.Product.SalePrice ?? 0m;
-                detail.UnitCost = detail.Product.CostPrice ?? 0m;
-            }
-
-            return details;
+            // ⚠️ CONSULTA HISTÓRICA: No aplicar validaciones de negocio
+            // Los detalles reflejan ventas ya realizadas, aunque el producto
+            // ahora esté inactivo o sin stock
+            
+            return details ?? Enumerable.Empty<SaleDetail>();
         }
 
         // ============================================
@@ -62,23 +50,10 @@ namespace Galaxium.Api.Services.Implementations
 
             var details = await _saleDetailRepository.GetByProductIdAsync(productId);
 
-            if (details == null || !details.Any())
-                throw new InvalidOperationException($"No se encontraron detalles para el producto Id {productId}.");
-
-            // Validar cada detalle según reglas de negocio
-            foreach (var detail in details)
-            {
-                _saleDetailRules.ValidateProductIsActive(detail.Product.IsActive);
-                _saleDetailRules.ValidateProductHasPrice(detail.Product.SalePrice);
-                _saleDetailRules.ValidateQuantity(detail.Quantity);
-                _saleDetailRules.ValidateQuantityAgainstStock(detail.Quantity, detail.Product.Stock);
-
-                // Asignar UnitPrice y UnitCost si no están ya
-                detail.UnitPrice = detail.Product.SalePrice ?? 0m;
-                detail.UnitCost = detail.Product.CostPrice ?? 0m;
-            }
-
-            return details;
+            // ⚠️ CONSULTA HISTÓRICA: No aplicar validaciones de negocio
+            // Muestra ventas históricas del producto
+            
+            return details ?? Enumerable.Empty<SaleDetail>();
         }
     }
 }

@@ -20,6 +20,8 @@ namespace Galaxium.API.Entities
         ============================ */
         public decimal SubTotal { get; set; }
         public decimal Discount { get; set; }
+        public decimal AmountPaid { get; set; } //dinero recivido --solo para efectivo
+        public decimal ChangeAmount { get; set; } //vuelto entregado --solo para efectivo
         public decimal Total { get; set; }
 
         /* ============================
