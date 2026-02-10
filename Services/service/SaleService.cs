@@ -7,6 +7,7 @@ using Galaxium.Api.Repository.Interfaces;
 using Galaxium.Api.Services.Interfaces;
 using Galaxium.Api.Services.Rules;
 using Galaxium.API.Repository.Interfaces;
+using Galaxium.Api.Entities;
 
 namespace Galaxium.Api.Services.Implementations
 {
@@ -15,15 +16,25 @@ namespace Galaxium.Api.Services.Implementations
         private readonly ISaleRepository _saleRepository;
         private readonly SaleRules _saleRules;
         private readonly IProductRepository _productRepository;
+        private readonly IEmailService _emailService;
+        private readonly ICustomerRepository _customerRepository;
+        private readonly IUserRepository _userRepository;
+
         public SaleService(
             ISaleRepository saleRepository,
             SaleRules saleRules,
-            IProductRepository productRepository
+            IProductRepository productRepository,
+            IEmailService emailService,
+            ICustomerRepository customerRepository,
+            IUserRepository userRepository
         )
         {
             _saleRepository = saleRepository;
             _saleRules = saleRules;
             _productRepository = productRepository;
+            _emailService = emailService;
+            _customerRepository = customerRepository;
+            _userRepository = userRepository;
         }
         // ============================================
         // Crear venta completa (cabecera + detalles)
@@ -106,7 +117,54 @@ namespace Galaxium.Api.Services.Implementations
             sale.Status = "COMPLETED";
 
             // 4️⃣ Delegar al repository la creación y manejo de stock
-            return await _saleRepository.CreateSaleWithDetailsAsync(sale, saleDetails);
+            var ventaCreada = await _saleRepository.CreateSaleWithDetailsAsync(sale, saleDetails);
+
+            // 5️⃣ Enviar email de confirmación de compra (no crítico, se ejecuta pero no falla la transacción)
+            try
+            {
+                // Obtener datos del cliente
+                if (ventaCreada.CustomerId.HasValue)
+                {
+                    var cliente = await _customerRepository.GetByIdCustomerAsync(ventaCreada.CustomerId.Value);
+                    if (cliente != null && !string.IsNullOrEmpty(cliente.Email))
+                    {
+                        // Obtener datos del vendedor
+                        var vendedor = await _userRepository.GetUserByIdAsync(ventaCreada.UserId);
+                        var nombreVendedor = vendedor?.FullName ?? "Vendedor";
+
+                        // Cargar los detalles completos con información del producto
+                        var detallesConProducto = new List<SaleDetail>();
+                        foreach (var detalle in saleDetails)
+                        {
+                            var producto = await _productRepository.GetProductByIdAsync(detalle.ProductId);
+                            detalle.Product = producto;
+                            detallesConProducto.Add(detalle);
+                        }
+
+                        // Asignar PaymentMethod desde la venta
+                        if (ventaCreada.PaymentMethod == null)
+                        {
+                            ventaCreada.PaymentMethod = new PaymentMethod { Name = "Efectivo" };
+                        }
+
+                        // Enviar email
+                        await _emailService.EnviarEmailCompraBienvenida(
+                            cliente.Email,
+                            cliente.FullName,
+                            ventaCreada,
+                            detallesConProducto,
+                            nombreVendedor
+                        );
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                // Loguear el error de email pero no fallar la venta
+                Console.WriteLine($"⚠️ Error al enviar email de compra: {ex.Message}");
+            }
+
+            return ventaCreada;
         }
 
         // ============================================
