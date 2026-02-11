@@ -3,6 +3,8 @@ using Galaxium.API.Entities;
 using Galaxium.API.DTOs.Product;
 using System;
 using Galaxium.API.Models;
+using Galaxium.Api.DTOs.Product;
+using Galaxium.Api.DTOs.productphoto;
 
 namespace Galaxium.Api.Mappings
 {
@@ -10,6 +12,31 @@ namespace Galaxium.Api.Mappings
     {
         public ProductProfile()
         {
+            CreateMap<ProductPhoto, ProductPhotoResponseDTO>();
+
+            CreateMap<Product, ProductWithPhotosResponseDTO>()
+                .ForMember(dest => dest.Photos,
+                    opt => opt.MapFrom(src => src.Photos));
+            CreateMap<Product, ProductWithPhotosResponseDTO>()
+    .ConstructUsing((src, ctx) => new ProductWithPhotosResponseDTO(
+        src.Id,
+        src.Name,
+        src.SKU,
+        src.Barcode,
+        src.CostPrice,
+        src.SalePrice,
+        src.Stock,
+        src.MinimumStock,
+        src.IsActive,
+        src.CreatedAt,
+        src.CategoryId,
+        src.Category != null ? src.Category.Name : string.Empty,
+        src.CreatedByUserId,
+        src.CreatedByUser != null ? src.CreatedByUser.FullName : string.Empty,
+        ctx.Mapper.Map<IEnumerable<ProductPhotoResponseDTO>>(src.Photos)
+    ));
+
+
             // ===============================
             // CREATE → ENTITY
             // ===============================
@@ -78,5 +105,7 @@ namespace Galaxium.Api.Mappings
                             : src.OrderBy
                     ));
         }
+
+
     }
 }

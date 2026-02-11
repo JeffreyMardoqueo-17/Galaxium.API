@@ -26,6 +26,8 @@ using Galaxium.Api.Services;
 using Galaxium.Api.Services.Rules;
 using Galaxium.Api.Services.Implementations;
 using Galaxium.API.Repositories.Implementations;
+using Galaxium.Api.Repository.Repositories;
+using Galaxium.Api.Services.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -93,6 +95,12 @@ builder.Services.AddScoped<ISaleRepository, SaleRepository>();
 
 builder.Services.AddScoped<ISaleDetailService, SaleDetailService>();
 builder.Services.AddScoped<ISaleDetailRepository, SaleDetailRepository>();
+
+///===================================SERVICIO DE DASHBOARD ============================================
+builder.Services.AddScoped<IDashboardRepository, DashboardRepository>();
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+
+
 ///----------------------------------------LAS REGLAS LAS REGISTRATE AQUI PARA ABAJO SIEMPRE ------------------------------
 builder.Services.AddScoped<StockEntryRules>();
 builder.Services.AddScoped<SaleRules>();

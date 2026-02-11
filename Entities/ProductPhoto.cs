@@ -12,5 +12,7 @@ namespace Galaxium.API.Entities
         public string PhotoUrl { get; set; } = string.Empty;
         public bool IsPrimary { get; set; }
         public DateTime UploadedAt { get; set; } = DateTime.UtcNow;
+        public Product Product { get; set; } = null!;
+
     }
 }

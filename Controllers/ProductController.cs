@@ -101,7 +101,7 @@ namespace Galaxium.Api.Controllers
         // ===============================
         [HttpGet("filter")]
         [Authorize]
-        public async Task<ActionResult<IEnumerable<ProductResponseDTO>>> GetProductsByFilter(
+        public async Task<ActionResult<IEnumerable<ProductWithPhotosResponseDTO>>> GetProductsByFilter(
             [FromQuery] ProductFilterRequestDTO filterDto)
         {
             // DTO (API) → Model (Service/Repository)
@@ -109,7 +109,7 @@ namespace Galaxium.Api.Controllers
 
             var products = await _productService.GetProductsFilterAsync(filterModel);
 
-            var response = _mapper.Map<IEnumerable<ProductResponseDTO>>(products);
+            var response = _mapper.Map<IEnumerable<ProductWithPhotosResponseDTO>>(products);
 
             return Ok(response);
         }
@@ -152,6 +152,44 @@ namespace Galaxium.Api.Controllers
                 return StatusCode(500, new { message = "Ocurrió un error al actualizar el precio" });
             }
         }
+        // ===============================
+        // GET: api/product/with-photos
+        // ===============================
+        [HttpGet("with-photos")]
+        [Authorize]
+        public async Task<ActionResult<IEnumerable<ProductWithPhotosResponseDTO>>> GetProductsWithPhotos()
+        {
+            try
+            {
+                // 🔹 Service (reglas de negocio)
+                var products = await _productService.GetProductsWithPhotosAsync();
+
+                // 🔹 Mapping → DTO
+                var response = _mapper.Map<IEnumerable<ProductWithPhotosResponseDTO>>(products);
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+
+                if (ex.Message.Contains("No existen productos"))
+                    return NotFound(new { message = ex.Message });
+
+                if (ex.Message.Contains("sin fotos"))
+                    return BadRequest(new { message = ex.Message });
+
+                if (ex.Message.Contains("múltiples fotos primarias"))
+                    return Conflict(new { message = ex.Message });
+
+                // 🔴 Error inesperado
+                return StatusCode(500, new
+                {
+                    message = "Ocurrió un error al obtener productos con fotos",
+                    detail = ex.Message
+                });
+            }
+        }
+
 
     }
 }

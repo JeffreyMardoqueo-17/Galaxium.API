@@ -111,7 +111,21 @@ namespace Galaxium.Api.Services.service
             // Guardar cambios en el repositorio
             return await _productRepository.UpdateProductPriceAsync(product);
         }
+        public async Task<IEnumerable<Product>> GetProductsWithPhotosAsync()
+        {
+            var products = await _productRepository.GetProductsWithPhotosAsync();
 
+            if (products == null || !products.Any())
+                return Enumerable.Empty<Product>();
+
+            foreach (var product in products)
+            {
+                if (product.Photos == null)
+                    product.Photos = new List<ProductPhoto>();
+            }
+
+            return products;
+        }
 
     }
 }

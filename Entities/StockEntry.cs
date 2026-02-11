@@ -1,7 +1,5 @@
 ﻿using Galaxium.Api.Enums;
 using Galaxium.API.Entities;
-using Microsoft.AspNetCore.Http.HttpResults;
-using System.Data;
 
 namespace Galaxium.Api.Entities
 {
@@ -9,31 +7,40 @@ namespace Galaxium.Api.Entities
     {
         public int Id { get; set; }
 
+        // ==========================
+        // RELACIONES
+        // ==========================
         public int ProductId { get; set; }
         public Product Product { get; set; } = null!;
 
-        public int UserId { get; set; } 
+        public int UserId { get; set; }
         public User User { get; set; } = null!;
-        public int RemainingQuantity { get; set; }
 
-
-        // + entra stock | - sale stock
+        // ==========================
+        // INVENTARIO
+        // ==========================
         public int Quantity { get; set; }
 
-        // Solo se usa cuando ReferenceType = PURCHASE
-        public decimal? UnitCost { get; set; }
+        public int RemainingQuantity { get; set; }
 
-        // PURCHASE | SALE | ADJUSTMENT
+        //  YA NO ES NULLABLE
+        public decimal UnitCost { get; set; }
+
+        //  COMPUTED COLUMN (BD)
+        public decimal TotalCost { get; private set; }
+
+        // ==========================
+        // REFERENCIA
+        // ==========================
         public StockReferenceType ReferenceType { get; set; }
 
-
-        // Id de la venta, ajuste, etc.
         public int? ReferenceId { get; set; }
 
+        // ==========================
+        // AUDITORÍA
+        // ==========================
         public DateTime CreatedAt { get; set; }
 
-        // 🔥 AQUÍ VA (NO SE GUARDA EN BD)
-        public decimal TotalCost =>
-            UnitCost.HasValue ? UnitCost.Value * Quantity : 0;
+        public bool IsActive { get; set; }
     }
 }

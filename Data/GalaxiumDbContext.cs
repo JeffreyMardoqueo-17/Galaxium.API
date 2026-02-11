@@ -81,9 +81,9 @@ namespace Galaxium.API.Data
             {
                 // SubTotal es columna calculada en SQL Server
                 entity.Property(sd => sd.SubTotal)
-                    .HasColumnType("decimal(18,2)") 
+                    .HasColumnType("decimal(18,2)")
                     .HasComputedColumnSql("([Quantity] * [UnitPrice])", stored: true);
-                
+
                 entity.Property(sd => sd.UnitPrice).HasColumnType("decimal(18,2)");
                 entity.Property(sd => sd.UnitCost).HasColumnType("decimal(18,2)");
 
@@ -97,6 +97,37 @@ namespace Galaxium.API.Data
                     .HasForeignKey(sd => sd.ProductId)
                     .OnDelete(DeleteBehavior.Restrict);
             });
+            // StockEntry
+            modelBuilder.Entity<StockEntry>(entity =>
+{
+    entity.Property(e => e.UnitCost)
+        .HasColumnType("decimal(18,2)");
+
+    entity.Property(e => e.TotalCost)
+        .HasColumnType("decimal(18,2)")
+        .HasComputedColumnSql(
+            "[Quantity] * [UnitCost]",
+            stored: true
+        );
+
+    entity.Property(e => e.IsActive)
+        .HasDefaultValue(true);
+
+    entity.Property(e => e.CreatedAt)
+        .HasDefaultValueSql("GETDATE()");
+
+    // Relaciones
+
+    entity.HasOne(e => e.Product)
+        .WithMany(p => p.StockEntries)
+        .HasForeignKey(e => e.ProductId)
+        .OnDelete(DeleteBehavior.Restrict);
+
+    entity.HasOne(e => e.User)
+        .WithMany(u => u.StockEntries)
+        .HasForeignKey(e => e.UserId)
+        .OnDelete(DeleteBehavior.Restrict);
+});
 
         }
 

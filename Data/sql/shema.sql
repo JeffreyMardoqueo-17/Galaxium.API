@@ -136,31 +136,45 @@ GO
 CREATE TABLE StockEntry
 (
     Id INT IDENTITY(1,1) PRIMARY KEY,
+
     ProductId INT NOT NULL,
     UserId INT NOT NULL,
-    -- quién registró la compra
 
+    -- Cantidad comprada
     Quantity INT NOT NULL,
-    -- cantidad comprada
-    RemainingQuantity INT NOT NULL,
-    -- cantidad restante del lote
 
+    -- Cantidad restante del lote
+    RemainingQuantity INT NOT NULL,
+
+    -- Costo unitario
     UnitCost DECIMAL(18,2) NOT NULL,
-    -- costo unitario de compra
+
+    -- Costo total del lote (calculado y persistido)
     TotalCost AS (Quantity * UnitCost) PERSISTED,
+
+    -- Tipo referencia
     ReferenceType INT NOT NULL DEFAULT 1,
-    -- 1 = Purchase por defecto
+
+    -- Id externo (venta, ajuste, etc.)
     ReferenceId INT NULL,
 
+    -- Auditoría
     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+
+    -- Activo mientras tenga stock
     IsActive BIT NOT NULL DEFAULT 1,
-    -- activo mientras RemainingQuantity > 0
 
-    CONSTRAINT FK_StockEntry_Product 
-        FOREIGN KEY (ProductId) REFERENCES Product(Id),
+    /* ============================
+       FOREIGN KEYS
+    ============================ */
 
-    CONSTRAINT FK_StockEntry_User 
-        FOREIGN KEY (UserId) REFERENCES [User](Id)
+    CONSTRAINT FK_StockEntry_Product
+        FOREIGN KEY (ProductId)
+        REFERENCES Product(Id),
+
+    CONSTRAINT FK_StockEntry_User
+        FOREIGN KEY (UserId)
+        REFERENCES [User](Id)
 );
 GO
 

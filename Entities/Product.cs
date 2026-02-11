@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Galaxium.Api.Entities;
 
 namespace Galaxium.API.Entities
 {
@@ -27,6 +28,11 @@ namespace Galaxium.API.Entities
         public ProductCategory Category { get; set; } = null!;
         public User CreatedByUser { get; set; } = null!;
         public ICollection<SaleDetail> SaleDetails { get; set; } = new List<SaleDetail>();
+        public ICollection<ProductPhoto> Photos { get; set; } = new List<ProductPhoto>();
+        public ICollection<StockEntry> StockEntries { get; set; }
+    = new List<StockEntry>();
+
+
     }
 
 }

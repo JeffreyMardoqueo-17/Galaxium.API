@@ -13,7 +13,6 @@ namespace Galaxium.Api.Services
         private readonly IProductRepository _productRepository;
         private readonly StockEntryRules _rules;
 
-
         public StockEntryService(
             IStockEntryRepository stockEntryRepository,
             IProductRepository productRepository,
@@ -21,49 +20,71 @@ namespace Galaxium.Api.Services
         {
             _stockEntryRepository = stockEntryRepository
                 ?? throw new ArgumentNullException(nameof(stockEntryRepository));
+
             _productRepository = productRepository
                 ?? throw new ArgumentNullException(nameof(productRepository));
-            _rules = rules ?? throw new ArgumentNullException(nameof(rules));
+
+            _rules = rules
+                ?? throw new ArgumentNullException(nameof(rules));
         }
 
+        // ===============================
+        // GET ALL
+        // ===============================
         public async Task<IEnumerable<StockEntry>> GetStockEntriesAsync()
         {
             return await _stockEntryRepository.GetStockEntriesAsync();
         }
+
+        // ===============================
+        // GET LAST BY PRODUCT
+        // ===============================
         public async Task<StockEntry?> GetLastEntryByProductIdAsync(int productId)
         {
-            return await _stockEntryRepository.GetLastEntryByProductIdAsync(productId);
+            return await _stockEntryRepository
+                .GetLastEntryByProductIdAsync(productId);
         }
 
-
+        // ===============================
+        // GET BY ID
+        // ===============================
         public async Task<StockEntry> GetByIdStockEntryAsync(int id)
         {
             if (id <= 0)
-                throw new ArgumentException("El id debe ser mayor que cero.");
+                throw new ArgumentException(
+                    "El id debe ser mayor que cero.");
 
-            var stockEntry = await _stockEntryRepository.GetByIdStockEntryAsync(id);
+            var stockEntry =
+                await _stockEntryRepository
+                    .GetByIdStockEntryAsync(id);
 
             if (stockEntry == null)
-                throw new KeyNotFoundException($"No se encontró la entrada de stock con id {id}");
+                throw new KeyNotFoundException(
+                    $"No se encontró la entrada de stock con id {id}");
 
             return stockEntry;
         }
 
-        public async Task<StockEntry> CreateStockEntryAsync(StockEntry stockEntry)
+        // ===============================
+        // CREATE
+        // ===============================
+        public async Task<StockEntry> CreateStockEntryAsync(
+            StockEntry stockEntry)
         {
             if (stockEntry == null)
                 throw new ArgumentNullException(nameof(stockEntry));
 
             // ===============================
-            // 1️⃣ Validaciones base (Rules)
+            // 1️⃣ Validaciones base
             // ===============================
-            _rules.ValidateQuantity(Math.Abs(stockEntry.Quantity));
+            _rules.ValidateQuantity(
+                Math.Abs(stockEntry.Quantity));
 
-            if (!stockEntry.UnitCost.HasValue)
+            if (stockEntry.UnitCost <= 0)
                 throw new InvalidOperationException(
-                    "El costo unitario es obligatorio.");
+                    "El costo unitario debe ser mayor que cero.");
 
-            _rules.ValidateUnitCost(stockEntry.UnitCost.Value);
+            _rules.ValidateUnitCost(stockEntry.UnitCost);
             _rules.ValidateUser(stockEntry.UserId);
 
             // ===============================
@@ -71,7 +92,8 @@ namespace Galaxium.Api.Services
             // ===============================
             var product =
                 await _productRepository
-                    .GetProductByIdAsync(stockEntry.ProductId);
+                    .GetProductByIdAsync(
+                        stockEntry.ProductId);
 
             _rules.ValidateProductExists(product);
 
@@ -83,7 +105,7 @@ namespace Galaxium.Api.Services
                 stockEntry.Quantity);
 
             // ===============================
-            // 4️⃣ Obtener último lote
+            // 4️⃣ Último lote
             // ===============================
             var lastEntry =
                 await _stockEntryRepository
@@ -94,18 +116,19 @@ namespace Galaxium.Api.Services
             {
                 _rules.ValidateDuplicateEntry(
                     Math.Abs(stockEntry.Quantity),
-                    stockEntry.UnitCost.Value,
+                    stockEntry.UnitCost,
                     lastEntry.CreatedAt);
 
                 _rules.ValidateCostVariation(
-                    stockEntry.UnitCost.Value,
+                    stockEntry.UnitCost,
                     lastEntry.UnitCost);
             }
 
             // ===============================
-            // 5️⃣ Completar datos lote
+            // 5️⃣ Datos del lote
             // ===============================
             stockEntry.CreatedAt = DateTime.UtcNow;
+
             stockEntry.RemainingQuantity =
                 _rules.InitializeRemaining(
                     Math.Abs(stockEntry.Quantity));
@@ -120,11 +143,12 @@ namespace Galaxium.Api.Services
                     _rules.ValidateExtremeQuantity(
                         stockEntry.Quantity);
 
-                    product.Stock += stockEntry.Quantity;
+                    product.Stock +=
+                        stockEntry.Quantity;
 
-                    // Último costo compra
+                    // Último costo de compra
                     product.CostPrice =
-                        stockEntry.UnitCost.Value;
+                        stockEntry.UnitCost;
 
                     break;
 
@@ -132,15 +156,21 @@ namespace Galaxium.Api.Services
 
                     if (product.Stock +
                         stockEntry.Quantity < 0)
+                    {
                         throw new InvalidOperationException(
                             "Stock insuficiente para realizar la venta.");
+                    }
 
-                    product.Stock += stockEntry.Quantity;
+                    product.Stock +=
+                        stockEntry.Quantity;
+
                     break;
 
                 case StockReferenceType.Adjustment:
 
-                    product.Stock += stockEntry.Quantity;
+                    product.Stock +=
+                        stockEntry.Quantity;
+
                     break;
 
                 default:
@@ -164,29 +194,42 @@ namespace Galaxium.Api.Services
                     product);
         }
 
-
-        // 🔥 Validación centralizada
-        private static void ValidateQuantity(StockReferenceType type, int quantity)
+        // ===============================
+        // VALIDACIÓN CENTRAL
+        // ===============================
+        private static void ValidateQuantity(
+            StockReferenceType type,
+            int quantity)
         {
             switch (type)
             {
                 case StockReferenceType.Purchase:
+
                     if (quantity <= 0)
-                        throw new InvalidOperationException("Purchase requiere quantity positiva.");
+                        throw new InvalidOperationException(
+                            "Purchase requiere quantity positiva.");
+
                     break;
 
                 case StockReferenceType.Sale:
+
                     if (quantity >= 0)
-                        throw new InvalidOperationException("Sale requiere quantity negativa.");
+                        throw new InvalidOperationException(
+                            "Sale requiere quantity negativa.");
+
                     break;
 
                 case StockReferenceType.Adjustment:
+
                     if (quantity == 0)
-                        throw new InvalidOperationException("Adjustment no puede ser cero.");
+                        throw new InvalidOperationException(
+                            "Adjustment no puede ser cero.");
+
                     break;
 
                 default:
-                    throw new InvalidOperationException("Tipo de movimiento inválido.");
+                    throw new InvalidOperationException(
+                        "Tipo de movimiento inválido.");
             }
         }
     }

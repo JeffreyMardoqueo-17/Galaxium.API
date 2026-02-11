@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Galaxium.Api.Entities;
 
 namespace Galaxium.API.Entities
 {
@@ -18,7 +19,10 @@ namespace Galaxium.API.Entities
     public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
     public ICollection<Product> ProductsCreated { get; set; } = new List<Product>();
     public ICollection<Sale> Sales { get; set; } = new List<Sale>();
-    public ICollection<SaleDetail> SaleDetails { get; set; } = new List<SaleDetail>();
+        public ICollection<SaleDetail> SaleDetails { get; set; } = new List<SaleDetail>();
+    public ICollection<StockEntry> StockEntries { get; set; }
+    = new List<StockEntry>();
+
 }
 
 }

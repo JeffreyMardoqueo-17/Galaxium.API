@@ -84,7 +84,9 @@ namespace Galaxium.Api.Repository.repos
             IQueryable<Product> query = _context.Product
                 .AsNoTracking()
                 .Include(p => p.Category)
+                .Include(p => p.Photos)
                 .Include(p => p.CreatedByUser);
+
 
             if (filter.CategoryId.HasValue)
                 query = query.Where(p => p.CategoryId == filter.CategoryId.Value);
@@ -118,11 +120,26 @@ namespace Galaxium.Api.Repository.repos
 
             return await query.ToListAsync();
         }
-         public async Task<Product?> UpdateProductPriceAsync(Product product)
+        public async Task<Product?> UpdateProductPriceAsync(Product product)
         {
             _context.Product.Update(product);
             await _context.SaveChangesAsync();
             return product;
         }
+
+        //metodo apra traer llas fotos de los productos
+        // ===============================
+        // GET PRODUCTS WITH PHOTOS
+        // ===============================
+        public async Task<IEnumerable<Product>> GetProductsWithPhotosAsync()
+        {
+            return await _context.Product
+                .AsNoTracking()
+                .Include(p => p.Category)
+                .Include(p => p.CreatedByUser)
+                .Include(p => p.Photos) // para lo de la foto
+                .ToListAsync();
+        }
+
     }
 }
