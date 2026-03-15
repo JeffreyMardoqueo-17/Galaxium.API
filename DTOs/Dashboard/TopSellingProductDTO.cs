@@ -8,10 +8,10 @@ namespace Galaxium.Api.DTOs.Dashboard
     {
         public int ProductId { get; set; }
 
-        public string ProductName { get; set; }
+        public string ProductName { get; set; } = string.Empty;
 
         public int TotalSold { get; set; }
 
-        public decimal RevenueGenerated { get; set; }
+        public decimal TotalRevenue { get; set; }
     }
 }

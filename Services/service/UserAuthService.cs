@@ -60,28 +60,36 @@ namespace Galaxium.API.Services.Service
 
         //otros metodos para que funcione el login 
         public async Task<(string accessToken, string refreshToken)?> RefreshTokenAsync(
-    string expiredAccessToken,
+    string? expiredAccessToken,
     string refreshToken
 )
         {
-            var principal = _jwtTokenService.GetPrincipalFromExpiredToken(expiredAccessToken);
-            if (principal == null)
-                return null;
-
-            var userId = int.Parse(principal.FindFirstValue(ClaimTypes.NameIdentifier)!);
-
             var storedToken = await _refreshTokenRepository.GetByTokenAsync(refreshToken);
 
             if (storedToken == null ||
                 storedToken.IsRevoked ||
-                storedToken.ExpiresAt < DateTime.UtcNow ||
-                storedToken.UserId != userId)
+                storedToken.ExpiresAt < DateTime.UtcNow)
             {
                 return null;
             }
 
+            if (!string.IsNullOrWhiteSpace(expiredAccessToken))
+            {
+                var principal = _jwtTokenService.GetPrincipalFromExpiredToken(expiredAccessToken);
+                if (principal == null)
+                    return null;
+
+                var userIdClaim = principal.FindFirstValue(ClaimTypes.NameIdentifier);
+                if (!int.TryParse(userIdClaim, out var userIdFromAccessToken))
+                    return null;
+
+                if (storedToken.UserId != userIdFromAccessToken)
+                    return null;
+            }
+
             // Revocar token viejo
             storedToken.IsRevoked = true;
+            storedToken.RevokedAt = DateTime.UtcNow;
             await _refreshTokenRepository.UpdateAsync(storedToken);
 
             // Crear nuevos

@@ -204,4 +204,38 @@ public class EmailService : IEmailService
 
         await EnviarEmailHtml(emailReceptor, asunto, cuerpoHtml);
     }
+
+    // Método para enviar código de recuperación de contraseña
+    public async Task EnviarEmailRecuperacion(string emailReceptor, string nombreUsuario, string codigo)
+    {
+        var asunto = "Recuperación de contraseña - Galaxium ERP";
+        var cuerpoHtml = $@"
+<html>
+  <head><meta charset='UTF-8'></head>
+  <body style='font-family: Arial, sans-serif; color: #333; background-color: #f9f9f9; padding: 20px;'>
+    <div style='max-width: 600px; margin: auto; background: white; border-radius: 8px; padding: 30px; box-shadow: 0 0 10px rgba(0,0,0,0.1);'>
+      <h2 style='color: #007acc; text-align: center;'>Recuperación de Contraseña</h2>
+      <p>Hola <strong>{nombreUsuario}</strong>,</p>
+      <p>Recibiste este correo porque solicitaste restablecer la contraseña de tu cuenta en Galaxium ERP.</p>
+      <p>Tu código de verificación es:</p>
+      <div style='font-size: 40px; font-weight: bold; color: #007acc; text-align: center;
+                  letter-spacing: 10px; padding: 20px; background: #f0f8ff;
+                  border-radius: 8px; margin: 20px 0; border: 2px dashed #007acc;'>
+        {codigo}
+      </div>
+      <p style='text-align: center; color: #666;'>
+        Este código expira en <strong>15 minutos</strong>.
+      </p>
+      <p style='color: #999; font-size: 13px;'>
+        Si no solicitaste este cambio, puedes ignorar este correo de forma segura.
+        Tu contraseña no será modificada.
+      </p>
+      <hr style='border: none; border-top: 1px solid #eee; margin: 20px 0;' />
+      <p style='text-align: center; font-size: 12px; color: #bbb;'>Galaxium ERP &mdash; Sistema de gestión</p>
+    </div>
+  </body>
+</html>";
+
+        await EnviarEmailHtml(emailReceptor, asunto, cuerpoHtml);
+    }
 }

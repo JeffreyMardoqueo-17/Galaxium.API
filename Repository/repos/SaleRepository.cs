@@ -19,57 +19,47 @@ namespace Galaxium.API.Repositories.Implementations
         // ============================================
         public async Task<Sale> CreateSaleWithDetailsAsync(Sale sale, IEnumerable<SaleDetail> saleDetails)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            // La transaccion se controla desde UnitOfWork en el servicio.
+            // Este repositorio solo persiste cambios de su agregado.
+            // 1. Guardar cabecera
+            await _context.Sale.AddAsync(sale);
+            await _context.SaveChangesAsync();
 
-            try
+            // 2. Guardar detalles y actualizar stock
+            foreach (var detail in saleDetails)
             {
-                // 1. Guardar cabecera
-                await _context.Sale.AddAsync(sale);
-                await _context.SaveChangesAsync();
+                detail.SaleId = sale.Id;
+                
+                // Agregar detalle (Product ya es null desde el Service)
+                await _context.SaleDetail.AddAsync(detail);
 
-                // 2. Guardar detalles y actualizar stock
-                foreach (var detail in saleDetails)
+                // 3. Cargar y actualizar el producto
+                var product = await _context.Product.FindAsync(detail.ProductId);
+                if (product != null)
                 {
-                    detail.SaleId = sale.Id;
-                    
-                    // Agregar detalle (Product ya es null desde el Service)
-                    await _context.SaleDetail.AddAsync(detail);
+                    // Descontar stock
+                    product.Stock -= detail.Quantity;
 
-                    // 3. Cargar y actualizar el producto
-                    var product = await _context.Product.FindAsync(detail.ProductId);
-                    if (product != null)
-                    {
-                        // Descontar stock
-                        product.Stock -= detail.Quantity;
+                    // Inactivar producto si stock = 0
+                    if (product.Stock <= 0)
+                        product.IsActive = false;
 
-                        // Inactivar producto si stock = 0
-                        if (product.Stock <= 0)
-                            product.IsActive = false;
-
-                        // EF Core ya rastrea este producto desde FindAsync
-                    }
+                    // EF Core ya rastrea este producto desde FindAsync
                 }
-
-                await _context.SaveChangesAsync();
-
-                await transaction.CommitAsync();
-                
-                // Recargar la venta con todos los detalles y valores calculados
-                var savedSale = await _context.Sale
-                    .Include(s => s.Customer)
-                    .Include(s => s.User)
-                    .Include(s => s.PaymentMethod)
-                    .Include(s => s.Details)
-                        .ThenInclude(d => d.Product)
-                    .FirstOrDefaultAsync(s => s.Id == sale.Id);
-                
-                return savedSale ?? sale;
             }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+
+            await _context.SaveChangesAsync();
+
+            // Recargar la venta con todos los detalles y valores calculados
+            var savedSale = await _context.Sale
+                .Include(s => s.Customer)
+                .Include(s => s.User)
+                .Include(s => s.PaymentMethod)
+                .Include(s => s.Details)
+                    .ThenInclude(d => d.Product)
+                .FirstOrDefaultAsync(s => s.Id == sale.Id);
+            
+            return savedSale ?? sale;
         }
 
         // ============================================

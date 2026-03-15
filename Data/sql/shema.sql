@@ -64,6 +64,27 @@ CREATE TABLE RefreshToken
 );
 GO
 
+/* ============================================================
+    TABLA: PasswordResetCode
+    Descripción: códigos temporales para recuperación de contraseña
+============================================================ */
+CREATE TABLE PasswordResetCode
+(
+     Id INT IDENTITY(1,1) PRIMARY KEY,
+     UserId INT NOT NULL,
+     CodeHash VARCHAR(255) NOT NULL,
+     ExpiresAt DATETIME NOT NULL,
+     IsUsed BIT NOT NULL DEFAULT 0,
+     CreatedAt DATETIME NOT NULL DEFAULT GETDATE(),
+
+     CONSTRAINT FK_PasswordResetCode_User
+          FOREIGN KEY (UserId) REFERENCES [User](Id) ON DELETE CASCADE
+);
+GO
+
+CREATE INDEX IX_PasswordResetCode_UserId ON PasswordResetCode(UserId);
+GO
+
 
 
 /* ============================================================

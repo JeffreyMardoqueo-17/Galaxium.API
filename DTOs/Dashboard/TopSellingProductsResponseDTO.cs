@@ -9,6 +9,6 @@ namespace Galaxium.Api.DTOs.Dashboard
     {
         public int RequestedTop { get; set; }
 
-        public IEnumerable<TopSellingProductDTO> Products { get; set; }
+        public IEnumerable<TopSellingProductDTO> Products { get; set; } = Enumerable.Empty<TopSellingProductDTO>();
     }
 }

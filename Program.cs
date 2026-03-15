@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.Options;
 using Galaxium.API.Entities;
+using Microsoft.Data.SqlClient;
 using GalaxiumERP.API.Repository.repos;
 using Galaxium.API.Services.service;
 using Galaxium.Api.Services.Interfaces;
@@ -28,18 +29,87 @@ using Galaxium.Api.Services.Implementations;
 using Galaxium.API.Repositories.Implementations;
 using Galaxium.Api.Repository.Repositories;
 using Galaxium.Api.Services.Services;
+using Galaxium.Api.Mappings;
+using Microsoft.Extensions.Hosting;
+using Galaxium.Api.Services.service.StockMovements;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configurar DbContext con SQL Server
+// Configurar DbContext con SQL Server y fallback seguro en desarrollo
+var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(defaultConnection))
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        defaultConnection = "Server=(localdb)\\MSSQLLocalDB;Database=GalaxiumBD;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=True;";
+        Console.WriteLine("[WARN] No se encontro ConnectionStrings:DefaultConnection. Se usara LocalDB de desarrollo.");
+    }
+    else
+    {
+        throw new InvalidOperationException("Missing configuration 'ConnectionStrings:DefaultConnection'. Configure it in appsettings or environment variables.");
+    }
+}
+
+EnsureLocalDevelopmentDatabase(defaultConnection, builder.Environment);
+
 builder.Services.AddDbContext<GalaxiumDbContext>(options =>
 {
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseSqlServer(defaultConnection, sqlServerOptions =>
+    {
+        sqlServerOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorNumbersToAdd: null);
+    });
 });
 
+static void EnsureLocalDevelopmentDatabase(string connectionString, IHostEnvironment environment)
+{
+    if (!environment.IsDevelopment())
+    {
+        return;
+    }
 
-// AutoMapper
-builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+    try
+    {
+        var connectionBuilder = new SqlConnectionStringBuilder(connectionString);
+        var databaseName = connectionBuilder.InitialCatalog;
+        var dataSource = connectionBuilder.DataSource ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(databaseName) || !dataSource.Contains("(localdb)", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        var masterBuilder = new SqlConnectionStringBuilder(connectionString)
+        {
+            InitialCatalog = "master"
+        };
+
+        using var connection = new SqlConnection(masterBuilder.ConnectionString);
+        connection.Open();
+
+        using var existsCommand = new SqlCommand("SELECT DB_ID(@databaseName)", connection);
+        existsCommand.Parameters.AddWithValue("@databaseName", databaseName);
+
+        var existsResult = existsCommand.ExecuteScalar();
+        if (existsResult is null || existsResult == DBNull.Value)
+        {
+            var escapedDbName = databaseName.Replace("]", "]]", StringComparison.Ordinal);
+            using var createCommand = new SqlCommand($"CREATE DATABASE [{escapedDbName}]", connection);
+            createCommand.ExecuteNonQuery();
+            Console.WriteLine($"[INFO] Development database '{databaseName}' was created on LocalDB.");
+        }
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"[WARN] Could not ensure LocalDB development database: {ex.Message}");
+    }
+}
+
+
+// AutoMapper: escanear solo el ensamblado de perfiles propios para evitar reflection sobre ensamblados externos.
+builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
 
 // Configurar opciones JWT
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
@@ -72,10 +142,16 @@ builder.Services.AddScoped<IProductFilterRepository, ProductRepository>();
 builder.Services.AddScoped<ICustomerRepository, CustomerRepository>();
 builder.Services.AddScoped<ICustomerService, CustomerService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IPasswordResetService, PasswordResetService>();
 
 //para el stokEntry
 builder.Services.AddScoped<IStockEntryRepository, StockEntryRepository>();
 builder.Services.AddScoped<IStockEntryService, StockEntryService>();
+builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
+builder.Services.AddScoped<IStockMovementHandler, PurchaseStockMovementHandler>();
+builder.Services.AddScoped<IStockMovementHandler, SaleStockMovementHandler>();
+builder.Services.AddScoped<IStockMovementHandler, AdjustmentStockMovementHandler>();
+builder.Services.AddScoped<IStockMovementHandlerFactory, StockMovementHandlerFactory>();
 
 //validaciones
 builder.Services.AddScoped<IValidator<Customer>, CustomerValidator>();
@@ -117,19 +193,48 @@ builder.Services.AddControllers()
 // Configurar CORS **antes** de Build()
 builder.Services.AddCors(options =>
 {
+    var allowedOrigins = builder.Configuration
+        .GetSection("Frontend:Origins")
+        .Get<string[]>()
+        ?? new[]
+        {
+            "http://localhost:3000",
+            "http://localhost:3001",
+            "http://192.168.1.206:3000",
+            "http://192.168.1.206:3001"
+        };
+
     options.AddPolicy("AllowFrontend", policy =>
     {
-        policy.WithOrigins("http://localhost:3000")
+        policy.WithOrigins(allowedOrigins)
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
     });
 });
 
-// Leer configuración JWT y validar que exista la clave
-var jwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>();
-if (jwtOptions == null || string.IsNullOrWhiteSpace(jwtOptions.Key))
-    throw new Exception("JWT Key is not configured.");
+// Leer configuración JWT y usar fallback de desarrollo cuando falte configuración.
+var configuredJwtOptions = builder.Configuration.GetSection("Jwt").Get<JwtOptions>() ?? new JwtOptions();
+var jwtOptions = configuredJwtOptions;
+
+if (string.IsNullOrWhiteSpace(configuredJwtOptions.Key))
+{
+    if (builder.Environment.IsDevelopment())
+    {
+        jwtOptions = new JwtOptions
+        {
+            Key = "dev-only-jwt-key-change-before-production-1234567890",
+            Issuer = string.IsNullOrWhiteSpace(configuredJwtOptions.Issuer) ? "galaxium.dev" : configuredJwtOptions.Issuer,
+            Audience = string.IsNullOrWhiteSpace(configuredJwtOptions.Audience) ? "galaxium.dev" : configuredJwtOptions.Audience,
+            AccessTokenMinutes = configuredJwtOptions.AccessTokenMinutes == 0 ? 30 : configuredJwtOptions.AccessTokenMinutes,
+            RefreshTokenDays = configuredJwtOptions.RefreshTokenDays == 0 ? 30 : configuredJwtOptions.RefreshTokenDays,
+        };
+    }
+    else
+    {
+        throw new Exception("JWT Key is not configured.");
+    }
+}
 
 // Configurar autenticación JWT
 builder.Services.AddAuthentication(options =>
@@ -139,7 +244,7 @@ builder.Services.AddAuthentication(options =>
 })
 .AddJwtBearer(options =>
 {
-    options.RequireHttpsMetadata = true;
+    options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
     options.SaveToken = true;
 
     options.TokenValidationParameters = new TokenValidationParameters
@@ -155,15 +260,38 @@ builder.Services.AddAuthentication(options =>
 
         ClockSkew = TimeSpan.Zero
     };
+
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            if (string.IsNullOrWhiteSpace(context.Token) &&
+                context.Request.Cookies.TryGetValue("access_token", out var cookieToken))
+            {
+                context.Token = cookieToken;
+            }
+
+            return Task.CompletedTask;
+        }
+    };
 });
 
 /// servicio de claudinary
 builder.Services.AddSingleton(sp =>
 {
     var cloudinaryUrl = builder.Configuration["URL:Claudinary"];
-    if (string.IsNullOrWhiteSpace(cloudinaryUrl))
-        throw new Exception("Cloudinary URL is not configured.");
-    return new Cloudinary(cloudinaryUrl);
+    if (!string.IsNullOrWhiteSpace(cloudinaryUrl))
+    {
+        return new Cloudinary(cloudinaryUrl);
+    }
+
+    if (builder.Environment.IsDevelopment())
+    {
+        // En desarrollo permitimos iniciar sin credenciales reales de Cloudinary.
+        return new Cloudinary(new Account("demo", "demo", "demo"));
+    }
+
+    throw new Exception("Cloudinary URL is not configured.");
 });
 
 // Swagger con soporte JWT
@@ -218,7 +346,10 @@ if (app.Environment.IsDevelopment())
     });
 }
 
-app.UseHttpsRedirection();
+if (!app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 app.UseMiddleware<ExceptionMiddleware>();
 // app.UseMiddleware<RateLimitMiddleware>();
 app.UseAuthentication();

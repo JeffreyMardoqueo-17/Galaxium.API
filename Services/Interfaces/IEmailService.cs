@@ -18,6 +18,7 @@ namespace Galaxium.Api.Services.Interfaces
             IEnumerable<SaleDetail> detallesVenta,
             string nombreVendedor
         );
+        Task EnviarEmailRecuperacion(string emailReceptor, string nombreUsuario, string codigo);
     }
 
 }

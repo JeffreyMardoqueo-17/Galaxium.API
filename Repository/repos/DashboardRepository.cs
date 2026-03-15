@@ -74,7 +74,7 @@ namespace Galaxium.Api.Repository.Repositories
                     ProductId = g.Key.ProductId,
                     ProductName = g.Key.Name,
                     TotalSold = g.Sum(x => x.Quantity),
-                    RevenueGenerated =
+                    TotalRevenue =
                         g.Sum(x => x.Quantity * x.UnitPrice)
                 })
                 .OrderByDescending(x => x.TotalSold)

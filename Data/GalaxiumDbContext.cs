@@ -40,6 +40,7 @@ namespace Galaxium.API.Data
         public DbSet<RefreshToken> RefreshToken => Set<RefreshToken>();
         public DbSet<StockEntry> StockEntry => Set<StockEntry>();
         public DbSet<PaymentMethod> PaymentMethod => Set<PaymentMethod>();
+        public DbSet<PasswordResetCode> PasswordResetCode => Set<PasswordResetCode>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -73,6 +74,8 @@ namespace Galaxium.API.Data
             {
                 entity.Property(s => s.SubTotal).HasColumnType("decimal(18,2)");
                 entity.Property(s => s.Discount).HasColumnType("decimal(18,2)");
+                entity.Property(s => s.AmountPaid).HasColumnType("decimal(18,2)");
+                entity.Property(s => s.ChangeAmount).HasColumnType("decimal(18,2)");
                 entity.Property(s => s.Total).HasColumnType("decimal(18,2)");
             });
 

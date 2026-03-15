@@ -26,6 +26,7 @@ namespace Galaxium.API.Repository.Repos
         {
             return await _context.RefreshToken
                 .Include(rt => rt.User)
+                .ThenInclude(u => u!.Role)
                 .FirstOrDefaultAsync(rt => rt.Token == token);
         }
 

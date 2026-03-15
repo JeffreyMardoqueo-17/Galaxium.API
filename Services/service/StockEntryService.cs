@@ -12,11 +12,15 @@ namespace Galaxium.Api.Services
         private readonly IStockEntryRepository _stockEntryRepository;
         private readonly IProductRepository _productRepository;
         private readonly StockEntryRules _rules;
+        private readonly IStockMovementHandlerFactory _stockMovementHandlerFactory;
+        private readonly IUnitOfWork _unitOfWork;
 
         public StockEntryService(
             IStockEntryRepository stockEntryRepository,
             IProductRepository productRepository,
-            StockEntryRules rules)
+            StockEntryRules rules,
+            IStockMovementHandlerFactory stockMovementHandlerFactory,
+            IUnitOfWork unitOfWork)
         {
             _stockEntryRepository = stockEntryRepository
                 ?? throw new ArgumentNullException(nameof(stockEntryRepository));
@@ -26,6 +30,12 @@ namespace Galaxium.Api.Services
 
             _rules = rules
                 ?? throw new ArgumentNullException(nameof(rules));
+
+            _stockMovementHandlerFactory = stockMovementHandlerFactory
+                ?? throw new ArgumentNullException(nameof(stockMovementHandlerFactory));
+
+            _unitOfWork = unitOfWork
+                ?? throw new ArgumentNullException(nameof(unitOfWork));
         }
 
         // ===============================
@@ -97,12 +107,10 @@ namespace Galaxium.Api.Services
 
             _rules.ValidateProductExists(product);
 
-            // ===============================
-            // 3️⃣ Validar lógica por tipo
-            // ===============================
-            ValidateQuantity(
-                stockEntry.ReferenceType,
-                stockEntry.Quantity);
+            if (product == null)
+            {
+                throw new InvalidOperationException("Producto no encontrado.");
+            }
 
             // ===============================
             // 4️⃣ Último lote
@@ -134,49 +142,16 @@ namespace Galaxium.Api.Services
                     Math.Abs(stockEntry.Quantity));
 
             // ===============================
-            // 6️⃣ Reglas sobre producto
+            // 6️⃣ Reglas por tipo usando Factory Method
             // ===============================
-            switch (stockEntry.ReferenceType)
+            if (stockEntry.ReferenceType == StockReferenceType.Purchase)
             {
-                case StockReferenceType.Purchase:
-
-                    _rules.ValidateExtremeQuantity(
-                        stockEntry.Quantity);
-
-                    product.Stock +=
-                        stockEntry.Quantity;
-
-                    // Último costo de compra
-                    product.CostPrice =
-                        stockEntry.UnitCost;
-
-                    break;
-
-                case StockReferenceType.Sale:
-
-                    if (product.Stock +
-                        stockEntry.Quantity < 0)
-                    {
-                        throw new InvalidOperationException(
-                            "Stock insuficiente para realizar la venta.");
-                    }
-
-                    product.Stock +=
-                        stockEntry.Quantity;
-
-                    break;
-
-                case StockReferenceType.Adjustment:
-
-                    product.Stock +=
-                        stockEntry.Quantity;
-
-                    break;
-
-                default:
-                    throw new InvalidOperationException(
-                        "Tipo de movimiento inválido.");
+                _rules.ValidateExtremeQuantity(stockEntry.Quantity);
             }
+
+            var movementHandler =
+                _stockMovementHandlerFactory.Create(stockEntry.ReferenceType);
+            movementHandler.Apply(stockEntry, product);
 
             // ===============================
             // 7️⃣ Activación producto
@@ -188,49 +163,8 @@ namespace Galaxium.Api.Services
             // ===============================
             // 8️⃣ Persistencia
             // ===============================
-            return await _stockEntryRepository
-                .CreateStockEntryAsync(
-                    stockEntry,
-                    product);
-        }
-
-        // ===============================
-        // VALIDACIÓN CENTRAL
-        // ===============================
-        private static void ValidateQuantity(
-            StockReferenceType type,
-            int quantity)
-        {
-            switch (type)
-            {
-                case StockReferenceType.Purchase:
-
-                    if (quantity <= 0)
-                        throw new InvalidOperationException(
-                            "Purchase requiere quantity positiva.");
-
-                    break;
-
-                case StockReferenceType.Sale:
-
-                    if (quantity >= 0)
-                        throw new InvalidOperationException(
-                            "Sale requiere quantity negativa.");
-
-                    break;
-
-                case StockReferenceType.Adjustment:
-
-                    if (quantity == 0)
-                        throw new InvalidOperationException(
-                            "Adjustment no puede ser cero.");
-
-                    break;
-
-                default:
-                    throw new InvalidOperationException(
-                        "Tipo de movimiento inválido.");
-            }
+            return await _unitOfWork.ExecuteInTransactionAsync(
+                () => _stockEntryRepository.CreateStockEntryAsync(stockEntry, product));
         }
     }
 }

@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Hosting;
 
 namespace Galaxium.Api.Controllers
 {
@@ -16,18 +17,27 @@ namespace Galaxium.Api.Controllers
     [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
+        private const string AccessTokenCookieName = "access_token";
+        private const string RefreshTokenCookieName = "refresh_token";
+
         private readonly IUserAuthService _userAuthService;
         private readonly IUserService _userService;
         private readonly IMapper _mapper;
+        private readonly IPasswordResetService _passwordResetService;
+        private readonly IWebHostEnvironment _environment;
 
         public UserController(
             IUserAuthService userAuthService,
             IUserService userService,
-            IMapper mapper)
+            IMapper mapper,
+            IPasswordResetService passwordResetService,
+            IWebHostEnvironment environment)
         {
             _userAuthService = userAuthService;
             _userService = userService;
             _mapper = mapper;
+            _passwordResetService = passwordResetService;
+            _environment = environment;
         }
 
         // POST: api/User/register
@@ -69,16 +79,11 @@ namespace Galaxium.Api.Controllers
                 return Unauthorized("Invalid username or password.");
 
             var (user, accessToken, refreshToken) = authResult.Value;
+            SetAuthCookies(accessToken, refreshToken);
 
             var userResponse = _mapper.Map<UserResponse>(user);
-            foreach (var claim in User.Claims)
-            {
-                Console.WriteLine($"{claim.Type} = {claim.Value}");
-            }
             return Ok(new
             {
-                accessToken,
-                refreshToken,
                 user = userResponse
             });
 
@@ -109,10 +114,10 @@ namespace Galaxium.Api.Controllers
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh()
         {
-            var accessToken = Request.Cookies["access_token"];
-            var refreshToken = Request.Cookies["refresh_token"];
+            var accessToken = Request.Cookies[AccessTokenCookieName];
+            var refreshToken = Request.Cookies[RefreshTokenCookieName];
 
-            if (string.IsNullOrEmpty(accessToken) || string.IsNullOrEmpty(refreshToken))
+            if (string.IsNullOrEmpty(refreshToken))
                 return Unauthorized();
 
             var result = await _userAuthService.RefreshTokenAsync(
@@ -125,21 +130,7 @@ namespace Galaxium.Api.Controllers
 
             var (newAccessToken, newRefreshToken) = result.Value;
 
-            Response.Cookies.Append("access_token", newAccessToken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddMinutes(15)
-            });
-
-            Response.Cookies.Append("refresh_token", newRefreshToken, new CookieOptions
-            {
-                HttpOnly = true,
-                Secure = false,
-                SameSite = SameSiteMode.Strict,
-                Expires = DateTime.UtcNow.AddDays(30)
-            });
+            SetAuthCookies(newAccessToken, newRefreshToken);
 
             return Ok();
         }
@@ -147,14 +138,13 @@ namespace Galaxium.Api.Controllers
         //[Authorize]
         public async Task<IActionResult> Logout()
         {
-            var refreshToken = Request.Cookies["refresh_token"];
+            var refreshToken = Request.Cookies[RefreshTokenCookieName];
             if (!string.IsNullOrEmpty(refreshToken))
             {
                 await _userAuthService.RevokeRefreshTokenAsync(refreshToken);
             }
 
-            Response.Cookies.Delete("access_token");
-            Response.Cookies.Delete("refresh_token");
+            DeleteAuthCookies();
 
             return Ok();
         }
@@ -182,6 +172,65 @@ namespace Galaxium.Api.Controllers
             // Entity List -> DTO List (AutoMapper)
             var response = _mapper.Map<List<UserResponse>>(users);
             return Ok(response);
+        }
+
+        // POST: api/User/forgot-password
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
+        {
+            // Siempre retorna 200 para no revelar si el email existe
+            await _passwordResetService.SendResetCodeAsync(request.Email);
+            return Ok(new { message = "Si el correo está registrado, recibirás un código de verificación." });
+        }
+
+        // POST: api/User/reset-password
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword([FromBody] ResetPasswordRequest request)
+        {
+            if (string.IsNullOrWhiteSpace(request.NewPassword) || request.NewPassword.Length < 6)
+                return BadRequest(new { message = "La nueva contraseña debe tener al menos 6 caracteres." });
+
+            var success = await _passwordResetService.ResetPasswordAsync(
+                request.Email, request.Code, request.NewPassword);
+
+            if (!success)
+                return BadRequest(new { message = "El código es inválido o ya expiró." });
+
+            return Ok(new { message = "Contraseña actualizada exitosamente." });
+        }
+
+        private void SetAuthCookies(string accessToken, string refreshToken)
+        {
+            Response.Cookies.Append(
+                AccessTokenCookieName,
+                accessToken,
+                BuildCookieOptions(DateTime.UtcNow.AddMinutes(15))
+            );
+
+            Response.Cookies.Append(
+                RefreshTokenCookieName,
+                refreshToken,
+                BuildCookieOptions(DateTime.UtcNow.AddDays(30))
+            );
+        }
+
+        private void DeleteAuthCookies()
+        {
+            var deleteOptions = BuildCookieOptions(DateTime.UtcNow.AddDays(-1));
+            Response.Cookies.Delete(AccessTokenCookieName, deleteOptions);
+            Response.Cookies.Delete(RefreshTokenCookieName, deleteOptions);
+        }
+
+        private CookieOptions BuildCookieOptions(DateTime expiresUtc)
+        {
+            return new CookieOptions
+            {
+                HttpOnly = true,
+                Secure = !_environment.IsDevelopment(),
+                SameSite = SameSiteMode.Lax,
+                Path = "/",
+                Expires = expiresUtc
+            };
         }
     }
 }

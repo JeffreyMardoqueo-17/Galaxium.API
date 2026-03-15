@@ -2,6 +2,8 @@ using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
 using Galaxium.API.Common;
+using Microsoft.Data.SqlClient;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
 
@@ -105,6 +107,12 @@ namespace Galaxium.API.Middlewares
             {
                 BusinessException be => be.StatusCode,
 
+                SqlException =>
+                    StatusCodes.Status503ServiceUnavailable,
+
+                DbUpdateException =>
+                    StatusCodes.Status409Conflict,
+
                 KeyNotFoundException =>
                     StatusCodes.Status404NotFound,
 
@@ -115,7 +123,7 @@ namespace Galaxium.API.Middlewares
                     StatusCodes.Status400BadRequest,
 
                 InvalidOperationException =>
-                    StatusCodes.Status409Conflict, // 🔥 reglas negocio
+                    StatusCodes.Status500InternalServerError,
 
                 _ =>
                     StatusCodes.Status500InternalServerError
@@ -132,6 +140,12 @@ namespace Galaxium.API.Middlewares
                 BusinessException =>
                     ex.Message,
 
+                SqlException =>
+                    "Database connection failed. Please verify SQL Server availability and credentials.",
+
+                DbUpdateException =>
+                    "The operation conflicts with current database data.",
+
                 KeyNotFoundException =>
                     "The requested resource was not found.",
 
@@ -142,7 +156,7 @@ namespace Galaxium.API.Middlewares
                     ex.Message,
 
                 InvalidOperationException =>
-                    ex.Message, // 🔥 reglas negocio visibles
+                    "An unexpected operation state occurred on the server.",
 
                 _ =>
                     "An unexpected error occurred on the server."

@@ -19,6 +19,7 @@ namespace Galaxium.Api.Services.Implementations
         private readonly IEmailService _emailService;
         private readonly ICustomerRepository _customerRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IUnitOfWork _unitOfWork;
 
         public SaleService(
             ISaleRepository saleRepository,
@@ -26,7 +27,8 @@ namespace Galaxium.Api.Services.Implementations
             IProductRepository productRepository,
             IEmailService emailService,
             ICustomerRepository customerRepository,
-            IUserRepository userRepository
+            IUserRepository userRepository,
+            IUnitOfWork unitOfWork
         )
         {
             _saleRepository = saleRepository;
@@ -35,6 +37,7 @@ namespace Galaxium.Api.Services.Implementations
             _emailService = emailService;
             _customerRepository = customerRepository;
             _userRepository = userRepository;
+            _unitOfWork = unitOfWork;
         }
         // ============================================
         // Crear venta completa (cabecera + detalles)
@@ -117,7 +120,8 @@ namespace Galaxium.Api.Services.Implementations
             sale.Status = "COMPLETED";
 
             // 4️⃣ Delegar al repository la creación y manejo de stock
-            var ventaCreada = await _saleRepository.CreateSaleWithDetailsAsync(sale, saleDetails);
+            var ventaCreada = await _unitOfWork.ExecuteInTransactionAsync(
+                () => _saleRepository.CreateSaleWithDetailsAsync(sale, saleDetails));
 
             // 5️⃣ Enviar email de confirmación de compra (no crítico, se ejecuta pero no falla la transacción)
             try

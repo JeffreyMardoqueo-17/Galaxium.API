@@ -40,27 +40,17 @@ namespace Galaxium.Api.Repository.repos
 
         public async Task<StockEntry> CreateStockEntryAsync(StockEntry stockEntry, Product product)
         {
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            // La transaccion se controla desde UnitOfWork en el servicio.
+            _context.StockEntry.Add(stockEntry);
+            _context.Product.Update(product);
 
-            try
-            {
-                _context.StockEntry.Add(stockEntry);
-                _context.Product.Update(product);
+            await _context.SaveChangesAsync();
 
-                await _context.SaveChangesAsync();
-                await transaction.CommitAsync();
+            // 🔥 Cargar relaciones para evitar NullReferenceException
+            await _context.Entry(stockEntry).Reference(e => e.Product).LoadAsync();
+            await _context.Entry(stockEntry).Reference(e => e.User).LoadAsync();
 
-                // 🔥 Cargar relaciones para evitar NullReferenceException
-                await _context.Entry(stockEntry).Reference(e => e.Product).LoadAsync();
-                await _context.Entry(stockEntry).Reference(e => e.User).LoadAsync();
-
-                return stockEntry;
-            }
-            catch
-            {
-                await transaction.RollbackAsync();
-                throw;
-            }
+            return stockEntry;
         }
         public async Task<StockEntry?> GetLastEntryByProductIdAsync(int productId)
 {
