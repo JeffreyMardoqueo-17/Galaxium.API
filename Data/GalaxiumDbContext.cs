@@ -87,10 +87,10 @@ namespace Galaxium.API.Data
             // Detalles de venta
             modelBuilder.Entity<SaleDetail>(entity =>
             {
-                // SubTotal es columna calculada en SQL Server
+                // SubTotal es columna calculada en PostgreSQL
                 entity.Property(sd => sd.SubTotal)
                     .HasColumnType("decimal(18,2)")
-                    .HasComputedColumnSql("([Quantity] * [UnitPrice])", stored: true);
+                    .HasComputedColumnSql("\"Quantity\" * \"UnitPrice\"", stored: true);
 
                 entity.Property(sd => sd.UnitPrice).HasColumnType("decimal(18,2)");
                 entity.Property(sd => sd.UnitCost).HasColumnType("decimal(18,2)");
@@ -114,7 +114,7 @@ namespace Galaxium.API.Data
     entity.Property(e => e.TotalCost)
         .HasColumnType("decimal(18,2)")
         .HasComputedColumnSql(
-            "[Quantity] * [UnitCost]",
+            "\"Quantity\" * \"UnitCost\"",
             stored: true
         );
 
@@ -122,7 +122,7 @@ namespace Galaxium.API.Data
         .HasDefaultValue(true);
 
     entity.Property(e => e.CreatedAt)
-        .HasDefaultValueSql("GETDATE()");
+        .HasDefaultValueSql("NOW()");
 
     // Relaciones
 
@@ -192,6 +192,12 @@ namespace Galaxium.API.Data
                     .OnDelete(DeleteBehavior.Cascade);
 });
 
+            // Seed de roles base con IDs fijos
+            modelBuilder.Entity<Role>().HasData(
+                new Role { Id = 1, Name = "Administrator" },
+                new Role { Id = 2, Name = "Cashier" },
+                new Role { Id = 3, Name = "Supervisor" }
+            );
         }
 
 

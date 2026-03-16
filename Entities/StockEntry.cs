@@ -19,6 +19,7 @@ namespace Galaxium.Api.Entities
         // ==========================
         // INVENTARIO
         // ==========================
+
         public int Quantity { get; set; }
 
         public int RemainingQuantity { get; set; }

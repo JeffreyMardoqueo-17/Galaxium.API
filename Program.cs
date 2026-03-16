@@ -12,7 +12,6 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.Options;
 using Galaxium.API.Entities;
-using Microsoft.Data.SqlClient;
 using GalaxiumERP.API.Repository.repos;
 using Galaxium.API.Services.service;
 using Galaxium.Api.Services.Interfaces;
@@ -33,81 +32,40 @@ using Galaxium.Api.Mappings;
 using Microsoft.Extensions.Hosting;
 using Galaxium.Api.Services.service.StockMovements;
 using Galaxium.Api.Utils;
+using Microsoft.AspNetCore.DataProtection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Configurar DbContext con SQL Server y fallback seguro en desarrollo
-var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection");
+// PostgreSQL via Npgsql. EnableLegacyTimestampBehavior permite usar DateTime sin Kind UTC explícito,
+// manteniendo la lógica de negocio existente sin cambios durante la migración.
+AppContext.SetSwitch("Npgsql.EnableLegacyTimestampBehavior", true);
+
+// Configuración de DataProtection para persistir llaves en volumen Docker solo en Producción/Docker
+var runningInDocker = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true";
+if (!builder.Environment.IsDevelopment())
+{
+    var keysPath = "/app/dataprotection-keys";
+    builder.Services.AddDataProtection()
+        .PersistKeysToFileSystem(new DirectoryInfo(keysPath));
+}
+
+var defaultConnection = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+    ?? builder.Configuration.GetConnectionString("DefaultConnection");
 if (string.IsNullOrWhiteSpace(defaultConnection))
 {
-    if (builder.Environment.IsDevelopment())
-    {
-        defaultConnection = "Server=(localdb)\\MSSQLLocalDB;Database=GalaxiumBD;Trusted_Connection=True;TrustServerCertificate=True;MultipleActiveResultSets=True;";
-        Console.WriteLine("[WARN] No se encontro ConnectionStrings:DefaultConnection. Se usara LocalDB de desarrollo.");
-    }
-    else
-    {
-        throw new InvalidOperationException("Missing configuration 'ConnectionStrings:DefaultConnection'. Configure it in appsettings or environment variables.");
-    }
+    throw new InvalidOperationException(
+        "Falta la variable de entorno 'ConnectionStrings__DefaultConnection'. " +
+        "Configúrala en Docker Compose o en tu entorno antes de iniciar la API.");
 }
-
-EnsureLocalDevelopmentDatabase(defaultConnection, builder.Environment);
 
 builder.Services.AddDbContext<GalaxiumDbContext>(options =>
-{
-    options.UseSqlServer(defaultConnection, sqlServerOptions =>
+    options.UseNpgsql(defaultConnection, npgsqlOptions =>
     {
-        sqlServerOptions.EnableRetryOnFailure(
+        npgsqlOptions.EnableRetryOnFailure(
             maxRetryCount: 5,
             maxRetryDelay: TimeSpan.FromSeconds(10),
-            errorNumbersToAdd: null);
-    });
-});
-
-static void EnsureLocalDevelopmentDatabase(string connectionString, IHostEnvironment environment)
-{
-    if (!environment.IsDevelopment())
-    {
-        return;
-    }
-
-    try
-    {
-        var connectionBuilder = new SqlConnectionStringBuilder(connectionString);
-        var databaseName = connectionBuilder.InitialCatalog;
-        var dataSource = connectionBuilder.DataSource ?? string.Empty;
-
-        if (string.IsNullOrWhiteSpace(databaseName) || !dataSource.Contains("(localdb)", StringComparison.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        var masterBuilder = new SqlConnectionStringBuilder(connectionString)
-        {
-            InitialCatalog = "master"
-        };
-
-        using var connection = new SqlConnection(masterBuilder.ConnectionString);
-        connection.Open();
-
-        using var existsCommand = new SqlCommand("SELECT DB_ID(@databaseName)", connection);
-        existsCommand.Parameters.AddWithValue("@databaseName", databaseName);
-
-        var existsResult = existsCommand.ExecuteScalar();
-        if (existsResult is null || existsResult == DBNull.Value)
-        {
-            var escapedDbName = databaseName.Replace("]", "]]", StringComparison.Ordinal);
-            using var createCommand = new SqlCommand($"CREATE DATABASE [{escapedDbName}]", connection);
-            createCommand.ExecuteNonQuery();
-            Console.WriteLine($"[INFO] Development database '{databaseName}' was created on LocalDB.");
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"[WARN] Could not ensure LocalDB development database: {ex.Message}");
-    }
-}
-
+            errorCodesToAdd: null);
+    }));
 
 // AutoMapper: escanear solo el ensamblado de perfiles propios para evitar reflection sobre ensamblados externos.
 builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
@@ -344,25 +302,31 @@ builder.Services.AddSwaggerGen(options =>
     });
 });
 
+
 var app = builder.Build();
+
+
 
 // Middleware CORS
 app.UseCors("AllowFrontend");
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI(options =>
-    {
-        options.SwaggerEndpoint("/swagger/v1/swagger.json", "Galaxium ERP API v1");
-        options.RoutePrefix = string.Empty;
-    });
-}
+// Habilitar archivos estáticos (necesario para Swagger UI en Producción/Docker)
+app.UseStaticFiles();
 
-if (!app.Environment.IsDevelopment())
+// Swagger accesible en la raíz (http://localhost:5213/)
+app.UseSwagger();
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Galaxium ERP API v1");
+    options.RoutePrefix = string.Empty;
+});
+
+// Redirección HTTPS solo si no está en Docker
+if (!app.Environment.IsDevelopment() && !runningInDocker)
 {
     app.UseHttpsRedirection();
 }
+
 app.UseMiddleware<ExceptionMiddleware>();
 // app.UseMiddleware<RateLimitMiddleware>();
 app.UseAuthentication();
@@ -370,4 +334,44 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-app.Run();
+
+
+// ===============================
+// Migraciones y Seed de Roles
+// ===============================
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<GalaxiumDbContext>();
+    try
+    {
+        Console.WriteLine("==========================================");
+        Console.WriteLine("🚀 Iniciando migración de base de datos PostgreSQL");
+        Console.WriteLine("==========================================");
+        db.Database.Migrate();
+        Console.WriteLine("✅ Migraciones aplicadas correctamente");
+
+        // Seed de roles
+        if (!db.Role.Any())
+        {
+            db.Role.AddRange(
+                new Role { Name = "Admin" },
+                new Role { Name = "User" },
+                new Role { Name = "Guest" }
+            );
+            db.SaveChanges();
+            Console.WriteLine("✅ Seed de roles insertado correctamente");
+        }
+        else
+        {
+            Console.WriteLine("ℹ️ Los roles ya existen, no se insertan duplicados");
+        }
+        Console.WriteLine("✅ Migraciones y seed completados");
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"❌ Error durante migración o seed: {ex.Message}");
+        throw;
+    }
+}
+
+await app.RunAsync();

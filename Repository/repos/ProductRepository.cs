@@ -1,6 +1,6 @@
 using Galaxium.API.Data;
 using Galaxium.API.Entities;
-using Galaxium.API.Models;
+using Galaxium.API.Entities;
 using Galaxium.API.Repository.Interfaces;
 using Microsoft.EntityFrameworkCore;
 

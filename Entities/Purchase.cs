@@ -2,6 +2,8 @@ using Galaxium.API.Entities;
 
 namespace Galaxium.Api.Entities;
 
+using System.ComponentModel.DataAnnotations;
+
 public class Purchase
 {
     public int Id { get; set; }
@@ -13,7 +15,11 @@ public class Purchase
 
     public DateTime PurchaseDate { get; set; } = DateTime.UtcNow;
     public decimal Total { get; set; }
+
+    [Required]
+    [MaxLength(30)]
     public string Status { get; set; } = "COMPLETED";
+
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     public ICollection<PurchaseDetail> Details { get; set; } = new List<PurchaseDetail>();

@@ -9,13 +9,19 @@ using Galaxium.API.Repository.Interfaces;
 
 namespace Galaxium.Api.Services.service
 {
-    public class UserService:IUserService
-    {
-        private readonly IUserRepository _userRepository;
-        public UserService(IUserRepository userRepository)
+        public class UserService : IUserService
         {
-            _userRepository = userRepository;
-        }
+            private readonly IUserRepository _userRepository;
+            public UserService(IUserRepository userRepository)
+            {
+                _userRepository = userRepository;
+            }
+
+            public async Task<bool> AnyUserExistsAsync()
+            {
+                var users = await _userRepository.GetAllUsersAsync();
+                return users != null && users.Any();
+            }
         public async Task<IEnumerable<User>> GetAllUsersAsync()
         {
             var users = await _userRepository.GetAllUsersAsync();

@@ -1,3 +1,21 @@
+-- =============================================
+-- SEED DE ROLES BASE PARA POSTGRESQL
+-- =============================================
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM "Role" WHERE "Name" = 'Administrador') THEN
+        INSERT INTO "Role" ("Name") VALUES ('Administrador');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM "Role" WHERE "Name" = 'Encargado de inventario') THEN
+        INSERT INTO "Role" ("Name") VALUES ('Encargado de inventario');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM "Role" WHERE "Name" = 'Cajero') THEN
+        INSERT INTO "Role" ("Name") VALUES ('Cajero');
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM "Role" WHERE "Name" = 'Supervisor') THEN
+        INSERT INTO "Role" ("Name") VALUES ('Supervisor');
+    END IF;
+END$$;
 /* ============================================================
    BASE DE DATOS: GalaxiumBD
    DESCRIPCIÓN:

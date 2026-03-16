@@ -2,7 +2,7 @@ using System.Net;
 using System.Security.Claims;
 using System.Text.Json;
 using Galaxium.API.Common;
-using Microsoft.Data.SqlClient;
+using Npgsql;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Logging;
@@ -107,7 +107,7 @@ namespace Galaxium.API.Middlewares
             {
                 BusinessException be => be.StatusCode,
 
-                SqlException =>
+                NpgsqlException =>
                     StatusCodes.Status503ServiceUnavailable,
 
                 DbUpdateException =>
@@ -140,8 +140,8 @@ namespace Galaxium.API.Middlewares
                 BusinessException =>
                     ex.Message,
 
-                SqlException =>
-                    "Database connection failed. Please verify SQL Server availability and credentials.",
+                NpgsqlException =>
+                    "Database connection failed. Please verify PostgreSQL availability and credentials.",
 
                 DbUpdateException =>
                     "The operation conflicts with current database data.",

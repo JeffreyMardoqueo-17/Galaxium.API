@@ -15,11 +15,18 @@ namespace Galaxium.API.Repository.Repos
             _context = context;
         }
 
+
+        /// <summary>
+        /// Crea un nuevo usuario y retorna la entidad con el rol cargado.
+        /// </summary>
+        /// <param name="newUser">Entidad usuario a crear.</param>
+        /// <returns>Usuario creado con la propiedad Role cargada.</returns>
         public async Task<User> CreateUserAsync(User newUser)
         {
             _context.User.Add(newUser);
             await _context.SaveChangesAsync();
-            return newUser;
+            // Recargar el usuario con el rol incluido para evitar roleName null
+            return await _context.User.Include(u => u.Role).FirstAsync(u => u.Id == newUser.Id);
         }
 
         public async Task<User?> AuthenticateUserAsync(string username)

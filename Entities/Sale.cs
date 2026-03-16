@@ -1,5 +1,7 @@
+
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using Galaxium.Api.Entities;
 
 namespace Galaxium.API.Entities
@@ -18,6 +20,7 @@ namespace Galaxium.API.Entities
         /* ============================
            FINANCIAL DATA
         ============================ */
+
         public decimal SubTotal { get; set; }
         public decimal Discount { get; set; }
         public decimal AmountPaid { get; set; } //dinero recivido --solo para efectivo
@@ -28,7 +31,12 @@ namespace Galaxium.API.Entities
            SALE INFO
         ============================ */
         public DateTime SaleDate { get; set; }
+
+        [Required]
+        [MaxLength(30)]
         public string Status { get; set; } = "COMPLETED";
+
+        [MaxLength(50)]
         public string? InvoiceNumber { get; set; }
 
         public DateTime CreatedAt { get; set; }

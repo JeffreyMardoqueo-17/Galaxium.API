@@ -15,14 +15,15 @@ namespace Galaxium.API.Entities
         /* ============================
            PRODUCT DATA
         ============================ */
-        public int Quantity { get; set; }
-        public decimal UnitPrice { get; set; }
-        public decimal UnitCost { get; set; }
 
-        // Columna calculada en SQL
-        public decimal SubTotal { get; private set; }
+      public int Quantity { get; set; }
+      public decimal UnitPrice { get; set; }
+      public decimal UnitCost { get; set; }
 
-        public DateTime CreatedAt { get; set; }
+      // Columna calculada en SQL
+      public decimal SubTotal { get; private set; }
+
+      public DateTime CreatedAt { get; set; }
 
         /* ============================
            NAVIGATION

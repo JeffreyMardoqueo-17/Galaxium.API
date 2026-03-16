@@ -2,7 +2,6 @@ using AutoMapper;
 using Galaxium.API.Entities;
 using Galaxium.API.DTOs.Product;
 using System;
-using Galaxium.API.Models;
 using Galaxium.Api.DTOs.Product;
 using Galaxium.Api.DTOs.productphoto;
 using Galaxium.Api.Enums;

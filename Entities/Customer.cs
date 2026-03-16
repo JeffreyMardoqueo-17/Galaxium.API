@@ -1,21 +1,27 @@
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.ComponentModel.DataAnnotations;
 
 namespace Galaxium.API.Entities
 {
     public class Customer
     {
-                public int Id { get; set; }
+        public int Id { get; set; }
 
         // Nombre completo del cliente
+        [Required]
+        [MaxLength(100)]
         public string FullName { get; set; } = null!;
 
         // Teléfono de contacto
+        [MaxLength(30)]
         public string? Phone { get; set; }
 
         // Correo electrónico
+        [MaxLength(150)]
         public string? Email { get; set; }
 
         // Fecha de registro

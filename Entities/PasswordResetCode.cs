@@ -1,4 +1,6 @@
+
 using System;
+using System.ComponentModel.DataAnnotations;
 using Galaxium.API.Entities;
 
 namespace Galaxium.Api.Entities
@@ -9,6 +11,8 @@ namespace Galaxium.Api.Entities
         public int UserId { get; set; }
 
         /// <summary>SHA-256 hash del código de 6 dígitos.</summary>
+        [Required]
+        [MaxLength(100)]
         public string CodeHash { get; set; } = null!;
 
         public DateTime ExpiresAt { get; set; }

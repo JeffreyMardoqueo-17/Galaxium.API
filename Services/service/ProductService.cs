@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 using Galaxium.Api.Services.Interfaces;
 using Galaxium.API.Common;
 using Galaxium.API.Entities;
-using Galaxium.API.Models;
+using Galaxium.API.Entities;
 using Galaxium.API.Repository.Interfaces;
 
 namespace Galaxium.Api.Services.service

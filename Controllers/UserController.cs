@@ -41,6 +41,38 @@ namespace Galaxium.Api.Controllers
             _environment = environment;
         }
 
+        // POST: api/User/first-register
+        /// <summary>
+        /// Permite crear el primer usuario administrador SOLO si no existe ningún usuario en la base. Después queda inservible (403).
+        /// </summary>
+        [HttpPost("first-register")]
+        [AllowAnonymous]
+        public async Task<IActionResult> FirstRegister([FromBody] UserCreateRequest request)
+        {
+            // Verifica si ya existe algún usuario
+            if (await _userService.AnyUserExistsAsync())
+                return StatusCode(403, "Ya existe al menos un usuario registrado. Este endpoint solo puede usarse una vez.");
+
+            if (string.IsNullOrWhiteSpace(request.Password))
+                return BadRequest("Password is required.");
+
+            // DTO -> Entity (AutoMapper)
+            var newUser = _mapper.Map<User>(request);
+
+            var createdUser = await _userAuthService.CreateUserAsync(
+                newUser,
+                request.Password
+            );
+
+            var response = _mapper.Map<UserResponse>(createdUser);
+
+            return CreatedAtAction(
+                nameof(GetById),
+                new { userId = response.Id },
+                response
+            );
+        }
+
         // POST: api/User/register
         [HttpPost("register")]
         [Authorize(Policy = GalaxiumPolicyNames.AdminOnly)]

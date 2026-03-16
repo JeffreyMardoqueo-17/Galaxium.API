@@ -8,13 +8,14 @@ namespace Galaxium.API.Entities
     /// <summary>
     /// Configuración para la generación y validación de JWT.
     /// </summary>
-    public  class JwtOptions
+    // No requiere data annotations, es solo configuración.
+    public class JwtOptions
     {
-        public string Key { get; init; } = string.Empty;
-        public string Issuer { get; init; } = string.Empty;
-        public string Audience { get; init; } = string.Empty;
-        public int AccessTokenMinutes { get; init; }
-        public int RefreshTokenDays { get; init; }
+        public string Key { get; set; } = string.Empty;
+        public string Issuer { get; set; } = string.Empty;
+        public string Audience { get; set; } = string.Empty;
+        public int AccessTokenMinutes { get; set; } = 60;
+        public int RefreshTokenDays { get; set; } = 7;
     }
 
 }
