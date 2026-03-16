@@ -7,11 +7,14 @@ using Galaxium.API.Entities;
 using Galaxium.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Galaxium.API.Common;
+using Microsoft.AspNetCore.Authorization;
+using Galaxium.Api.Utils;
 
 namespace Galaxium.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = GalaxiumPolicyNames.SalesAccess)]
     public class CustomerController : ControllerBase
     {
         private readonly ICustomerService _customerService;

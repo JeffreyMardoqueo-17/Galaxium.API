@@ -10,6 +10,7 @@ namespace Galaxium.API.DTOs.Users
         string FullName,
         string Username,
         int RoleId,
+        string RoleName,
         bool IsActive,
         DateTime CreatedAt
     );

@@ -10,5 +10,7 @@ namespace Galaxium.API.Repository.Interfaces
     {
         Task<IEnumerable<User>> GetAllUsersAsync();
         Task<User?> GetUserByIdAsync(int userId);
+        Task<User?> UpdateUserRoleAsync(int userId, int roleId);
+        Task<User?> UpdateUserStatusAsync(int userId, bool isActive);
     }
 }

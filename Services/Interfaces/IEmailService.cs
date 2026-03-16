@@ -16,7 +16,9 @@ namespace Galaxium.Api.Services.Interfaces
             string nombreCliente,
             Sale sale,
             IEnumerable<SaleDetail> detallesVenta,
-            string nombreVendedor
+            string nombreVendedor,
+            byte[]? facturaPdfBytes = null,
+            string? nombreArchivoPdf = null
         );
         Task EnviarEmailRecuperacion(string emailReceptor, string nombreUsuario, string codigo);
     }

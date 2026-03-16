@@ -20,6 +20,8 @@ namespace Galaxium.Api.Services.Implementations
         private readonly ICustomerRepository _customerRepository;
         private readonly IUserRepository _userRepository;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly ISalePdfService _salePdfService;
+        private readonly IStockAlertService _stockAlertService;
 
         public SaleService(
             ISaleRepository saleRepository,
@@ -28,7 +30,9 @@ namespace Galaxium.Api.Services.Implementations
             IEmailService emailService,
             ICustomerRepository customerRepository,
             IUserRepository userRepository,
-            IUnitOfWork unitOfWork
+            IUnitOfWork unitOfWork,
+            ISalePdfService salePdfService,
+            IStockAlertService stockAlertService
         )
         {
             _saleRepository = saleRepository;
@@ -38,6 +42,8 @@ namespace Galaxium.Api.Services.Implementations
             _customerRepository = customerRepository;
             _userRepository = userRepository;
             _unitOfWork = unitOfWork;
+            _salePdfService = salePdfService;
+            _stockAlertService = stockAlertService;
         }
         // ============================================
         // Crear venta completa (cabecera + detalles)
@@ -136,13 +142,25 @@ namespace Galaxium.Api.Services.Implementations
                         var vendedor = await _userRepository.GetUserByIdAsync(ventaCreada.UserId);
                         var nombreVendedor = vendedor?.FullName ?? "Vendedor";
 
-                        // Cargar los detalles completos con información del producto
+                        // Construir una copia para email sin mutar entidades rastreadas por EF Core.
                         var detallesConProducto = new List<SaleDetail>();
                         foreach (var detalle in saleDetails)
                         {
                             var producto = await _productRepository.GetProductByIdAsync(detalle.ProductId);
-                            detalle.Product = producto;
-                            detallesConProducto.Add(detalle);
+                            detallesConProducto.Add(new SaleDetail
+                            {
+                                ProductId = detalle.ProductId,
+                                Quantity = detalle.Quantity,
+                                UnitPrice = detalle.UnitPrice,
+                                UnitCost = detalle.UnitCost,
+                                Product = producto == null
+                                    ? null
+                                    : new Product
+                                    {
+                                        Id = producto.Id,
+                                        Name = producto.Name
+                                    }
+                            });
                         }
 
                         // Asignar PaymentMethod desde la venta
@@ -152,12 +170,17 @@ namespace Galaxium.Api.Services.Implementations
                         }
 
                         // Enviar email
+                        var invoicePdfBytes = _salePdfService.GenerateInvoicePdf(ventaCreada);
+                        var invoiceFileName = $"Factura-{ventaCreada.InvoiceNumber ?? ventaCreada.Id.ToString()}.pdf";
+
                         await _emailService.EnviarEmailCompraBienvenida(
                             cliente.Email,
                             cliente.FullName,
                             ventaCreada,
                             detallesConProducto,
-                            nombreVendedor
+                            nombreVendedor,
+                            invoicePdfBytes,
+                            invoiceFileName
                         );
                     }
                 }
@@ -166,6 +189,16 @@ namespace Galaxium.Api.Services.Implementations
             {
                 // Loguear el error de email pero no fallar la venta
                 Console.WriteLine($"⚠️ Error al enviar email de compra: {ex.Message}");
+            }
+
+            try
+            {
+                await _stockAlertService.RefreshAlertsAsync();
+            }
+            catch (Exception ex)
+            {
+                // Las alertas son un efecto secundario; no deben romper la venta ya confirmada.
+                Console.WriteLine($"⚠️ Error al refrescar alertas de stock: {ex.Message}");
             }
 
             return ventaCreada;

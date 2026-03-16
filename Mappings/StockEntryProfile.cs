@@ -21,6 +21,9 @@ namespace Galaxium.Api.Mappings
                     src.TotalCost,
                     src.ReferenceType.ToString(),
                     src.ReferenceId,
+                    src.Reason,
+                    src.SupplierId,
+                    src.Supplier != null ? src.Supplier.Name : null,
                     src.CreatedAt
                 ));
 

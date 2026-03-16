@@ -12,6 +12,9 @@ namespace Galaxium.Api.DTOs.StockEntry
         decimal TotalCost,
         string ReferenceType,
         int? ReferenceId,
+        string? Reason,
+        int? SupplierId,
+        string? SupplierName,
         DateTime CreatedAt
     );
 }

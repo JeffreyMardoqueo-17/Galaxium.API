@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
     using AutoMapper;
 using Galaxium.API.Entities;
 using Microsoft.AspNetCore.Authorization; //
+using Galaxium.Api.Utils;
 namespace Galaxium.Api.Controllers
 {
 
@@ -22,7 +23,7 @@ namespace Galaxium.Api.Controllers
         }
 
         [HttpGet]
-        [Authorize]
+        [Authorize(Policy = GalaxiumPolicyNames.ReportsAccess)]
         public async Task<IActionResult> GetAllProductCategories()
         {
             var categories = await _productCategoryService.GetAllProductCategories();
@@ -30,7 +31,7 @@ namespace Galaxium.Api.Controllers
         }
 
         [HttpGet("{id:int}")]
-        [Authorize]
+        [Authorize(Policy = GalaxiumPolicyNames.ReportsAccess)]
         public async Task<IActionResult> GetProductCategoryById(int id)
         {
             var category = await _productCategoryService.GetProductCategoryById(id);
@@ -40,7 +41,7 @@ namespace Galaxium.Api.Controllers
         }
 
         [HttpPost]
-        [Authorize]
+        [Authorize(Policy = GalaxiumPolicyNames.InventoryManagement)]
         public async Task<IActionResult> CreateProductCategory([FromBody] ProductCategoryRequestDTO dto)
         {
             if (dto == null)

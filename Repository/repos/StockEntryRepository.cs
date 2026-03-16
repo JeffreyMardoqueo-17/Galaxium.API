@@ -26,6 +26,7 @@ namespace Galaxium.Api.Repository.repos
                 .AsNoTracking()
                 .Include(se => se.Product)
                 .Include(se => se.User)
+                .Include(se => se.Supplier)
                 .ToListAsync();
         }
 
@@ -35,6 +36,7 @@ namespace Galaxium.Api.Repository.repos
                 .AsNoTracking()
                 .Include(se => se.Product)
                 .Include(se => se.User)
+                .Include(se => se.Supplier)
                 .FirstOrDefaultAsync(se => se.Id == id);
         }
 
@@ -49,6 +51,10 @@ namespace Galaxium.Api.Repository.repos
             // 🔥 Cargar relaciones para evitar NullReferenceException
             await _context.Entry(stockEntry).Reference(e => e.Product).LoadAsync();
             await _context.Entry(stockEntry).Reference(e => e.User).LoadAsync();
+            if (stockEntry.SupplierId.HasValue)
+            {
+                await _context.Entry(stockEntry).Reference(e => e.Supplier).LoadAsync();
+            }
 
             return stockEntry;
         }

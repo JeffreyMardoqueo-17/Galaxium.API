@@ -37,5 +37,32 @@ namespace Galaxium.Api.Services.service
             }
             return user;
         }
+
+        public async Task<User> UpdateUserRoleAsync(int userId, int roleId)
+        {
+            if (userId <= 0)
+                throw new ArgumentException("Invalid user ID.");
+
+            if (roleId <= 0)
+                throw new ArgumentException("Invalid role ID.");
+
+            var updated = await _userRepository.UpdateUserRoleAsync(userId, roleId);
+            if (updated == null)
+                throw new NotFoundBusinessException("User not found.");
+
+            return updated;
+        }
+
+        public async Task<User> UpdateUserStatusAsync(int userId, bool isActive)
+        {
+            if (userId <= 0)
+                throw new ArgumentException("Invalid user ID.");
+
+            var updated = await _userRepository.UpdateUserStatusAsync(userId, isActive);
+            if (updated == null)
+                throw new NotFoundBusinessException("User not found.");
+
+            return updated;
+        }
     }
 }

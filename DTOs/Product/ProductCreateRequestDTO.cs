@@ -6,6 +6,7 @@ namespace Galaxium.API.DTOs.Product
       int CategoryId,
       string Name,
       int MinimumStock,
+      string? UnitOfMeasure,
        string? Barcode   // 👈 NUEVO
   );
 

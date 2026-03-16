@@ -14,13 +14,15 @@ namespace Galaxium.Api.Services
         private readonly StockEntryRules _rules;
         private readonly IStockMovementHandlerFactory _stockMovementHandlerFactory;
         private readonly IUnitOfWork _unitOfWork;
+        private readonly IStockAlertService _stockAlertService;
 
         public StockEntryService(
             IStockEntryRepository stockEntryRepository,
             IProductRepository productRepository,
             StockEntryRules rules,
             IStockMovementHandlerFactory stockMovementHandlerFactory,
-            IUnitOfWork unitOfWork)
+            IUnitOfWork unitOfWork,
+            IStockAlertService stockAlertService)
         {
             _stockEntryRepository = stockEntryRepository
                 ?? throw new ArgumentNullException(nameof(stockEntryRepository));
@@ -36,6 +38,9 @@ namespace Galaxium.Api.Services
 
             _unitOfWork = unitOfWork
                 ?? throw new ArgumentNullException(nameof(unitOfWork));
+
+            _stockAlertService = stockAlertService
+                ?? throw new ArgumentNullException(nameof(stockAlertService));
         }
 
         // ===============================
@@ -97,6 +102,12 @@ namespace Galaxium.Api.Services
             _rules.ValidateUnitCost(stockEntry.UnitCost);
             _rules.ValidateUser(stockEntry.UserId);
 
+            if ((stockEntry.ReferenceType == StockReferenceType.Adjustment || stockEntry.ReferenceType == StockReferenceType.Return)
+                && string.IsNullOrWhiteSpace(stockEntry.Reason))
+            {
+                throw new InvalidOperationException("El motivo es obligatorio para ajustes y devoluciones.");
+            }
+
             // ===============================
             // 2️⃣ Obtener producto
             // ===============================
@@ -149,6 +160,11 @@ namespace Galaxium.Api.Services
                 _rules.ValidateExtremeQuantity(stockEntry.Quantity);
             }
 
+            if (stockEntry.ReferenceType == StockReferenceType.Return && stockEntry.Quantity <= 0)
+            {
+                throw new InvalidOperationException("La devolución debe registrar cantidad positiva.");
+            }
+
             var movementHandler =
                 _stockMovementHandlerFactory.Create(stockEntry.ReferenceType);
             movementHandler.Apply(stockEntry, product);
@@ -163,8 +179,11 @@ namespace Galaxium.Api.Services
             // ===============================
             // 8️⃣ Persistencia
             // ===============================
-            return await _unitOfWork.ExecuteInTransactionAsync(
+            var created = await _unitOfWork.ExecuteInTransactionAsync(
                 () => _stockEntryRepository.CreateStockEntryAsync(stockEntry, product));
+
+            await _stockAlertService.RefreshAlertsAsync();
+            return created;
         }
     }
 }

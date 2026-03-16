@@ -10,5 +10,8 @@ namespace Galaxium.Api.Services.Interfaces
 
         Task<TopSellingProductsResponseDTO>
             GetTopSellingProductsAsync(int top);
+
+        Task<DashboardSalesAnalyticsDTO>
+            GetSalesAnalyticsAsync(int days, int months, int years);
     }
 }

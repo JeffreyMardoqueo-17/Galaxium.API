@@ -4,22 +4,28 @@ using System.Threading.Tasks;
 using AutoMapper;
 using Galaxium.API.Entities;
 using Galaxium.API.DTOs;
+using Microsoft.AspNetCore.Authorization;
+using Galaxium.Api.Utils;
 using Galaxium.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using Galaxium.API.DTOs;
 
 namespace Galaxium.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = GalaxiumPolicyNames.SalesAccess)]
     public class SaleController : ControllerBase
     {
         private readonly ISaleService _saleService;
+        private readonly ISaleReportingService _saleReportingService;
         private readonly IMapper _mapper;
 
-        public SaleController(ISaleService saleService, IMapper mapper)
+        public SaleController(ISaleService saleService, ISaleReportingService saleReportingService, IMapper mapper)
         {
             _saleService = saleService;
+            _saleReportingService = saleReportingService;
             _mapper = mapper;
         }
 
@@ -135,6 +141,54 @@ namespace Galaxium.Api.Controllers
             var sales = await _saleService.GetSalesByCustomerAsync(customerId);
             var response = _mapper.Map<IEnumerable<SaleResponseDto>>(sales);
             return Ok(response);
+        }
+
+        // ======================================================
+        // GET: api/Sale/History?startDate=2026-03-01&endDate=2026-03-15
+        // Historial consolidado con métricas monetarias
+        // ======================================================
+        [HttpGet("History")]
+        public async Task<ActionResult<SaleHistoryResponseDto>> GetSalesHistory(
+            [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate)
+        {
+            var history = await _saleReportingService.GetSalesHistoryAsync(startDate, endDate);
+            return Ok(history);
+        }
+
+        // ======================================================
+        // GET: api/Sale/{saleId}/InvoicePdf
+        // Descargar factura PDF de una venta específica
+        // ======================================================
+        [HttpGet("{saleId:int}/InvoicePdf")]
+        public async Task<IActionResult> DownloadInvoicePdf(int saleId)
+        {
+            var (content, fileName) = await _saleReportingService.GenerateInvoicePdfAsync(saleId);
+            return File(content, "application/pdf", fileName);
+        }
+
+        // ======================================================
+        // GET: api/Sale/ReportPdf?startDate=2026-03-01&endDate=2026-03-15
+        // Descargar reporte monetario PDF por rango
+        // ======================================================
+        [HttpGet("ReportPdf")]
+        public async Task<IActionResult> DownloadSalesReportPdf(
+            [FromQuery] DateTime? startDate,
+            [FromQuery] DateTime? endDate)
+        {
+            var (content, fileName) = await _saleReportingService.GenerateSalesReportPdfAsync(startDate, endDate);
+            return File(content, "application/pdf", fileName);
+        }
+
+        // ======================================================
+        // GET: api/Sale/DailyInvoicesPdf?date=2026-03-15
+        // Descargar facturas del día en un PDF consolidado
+        // ======================================================
+        [HttpGet("DailyInvoicesPdf")]
+        public async Task<IActionResult> DownloadDailyInvoicesPdf([FromQuery] DateTime date)
+        {
+            var (content, fileName) = await _saleReportingService.GenerateDailyInvoicesPdfAsync(date);
+            return File(content, "application/pdf", fileName);
         }
     }
 }

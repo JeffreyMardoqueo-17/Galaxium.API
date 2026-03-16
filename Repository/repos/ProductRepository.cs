@@ -55,6 +55,32 @@ namespace Galaxium.Api.Repository.repos
                 .FirstAsync(p => p.Id == newProduct.Id);
         }
 
+        public async Task<Product?> UpdateProductAsync(Product product)
+        {
+            var current = await _context.Product.FirstOrDefaultAsync(p => p.Id == product.Id);
+            if (current == null)
+            {
+                return null;
+            }
+
+            current.Name = product.Name;
+            current.CategoryId = product.CategoryId;
+            current.Barcode = product.Barcode;
+            current.MinimumStock = product.MinimumStock;
+            current.CostPrice = product.CostPrice;
+            current.SalePrice = product.SalePrice;
+            current.IsActive = product.IsActive;
+            current.UnitOfMeasure = product.UnitOfMeasure;
+
+            await _context.SaveChangesAsync();
+
+            return await _context.Product
+                .AsNoTracking()
+                .Include(p => p.Category)
+                .Include(p => p.CreatedByUser)
+                .FirstOrDefaultAsync(p => p.Id == current.Id);
+        }
+
         // ===============================
         // SKU SUPPORT
         // ===============================

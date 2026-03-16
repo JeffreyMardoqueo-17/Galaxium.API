@@ -41,6 +41,10 @@ namespace Galaxium.API.Data
         public DbSet<StockEntry> StockEntry => Set<StockEntry>();
         public DbSet<PaymentMethod> PaymentMethod => Set<PaymentMethod>();
         public DbSet<PasswordResetCode> PasswordResetCode => Set<PasswordResetCode>();
+        public DbSet<StockAlert> StockAlert => Set<StockAlert>();
+        public DbSet<Supplier> Supplier => Set<Supplier>();
+        public DbSet<Purchase> Purchase => Set<Purchase>();
+        public DbSet<PurchaseDetail> PurchaseDetail => Set<PurchaseDetail>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -67,6 +71,7 @@ namespace Galaxium.API.Data
             {
                 entity.Property(p => p.CostPrice).HasColumnType("decimal(18,2)");
                 entity.Property(p => p.SalePrice).HasColumnType("decimal(18,2)");
+                entity.Property(p => p.UnitOfMeasure).HasConversion<string>().HasMaxLength(30);
             });
 
             // Venta
@@ -130,6 +135,61 @@ namespace Galaxium.API.Data
         .WithMany(u => u.StockEntries)
         .HasForeignKey(e => e.UserId)
         .OnDelete(DeleteBehavior.Restrict);
+
+    entity.HasOne(e => e.Supplier)
+        .WithMany(s => s.StockEntries)
+        .HasForeignKey(e => e.SupplierId)
+        .OnDelete(DeleteBehavior.SetNull);
+});
+
+            modelBuilder.Entity<Supplier>(entity =>
+            {
+                entity.Property(s => s.Name).HasMaxLength(150);
+                entity.Property(s => s.Phone).HasMaxLength(30);
+                entity.Property(s => s.Email).HasMaxLength(150);
+                entity.Property(s => s.Address).HasMaxLength(300);
+            });
+
+            modelBuilder.Entity<Purchase>(entity =>
+            {
+                entity.Property(p => p.Total).HasColumnType("decimal(18,2)");
+                entity.Property(p => p.Status).HasMaxLength(30);
+
+                entity.HasOne(p => p.Supplier)
+                    .WithMany(s => s.Purchases)
+                    .HasForeignKey(p => p.SupplierId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(p => p.User)
+                    .WithMany()
+                    .HasForeignKey(p => p.UserId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<PurchaseDetail>(entity =>
+            {
+                entity.Property(p => p.UnitPrice).HasColumnType("decimal(18,2)");
+                entity.Property(p => p.Total).HasColumnType("decimal(18,2)");
+
+                entity.HasOne(p => p.Purchase)
+                    .WithMany(s => s.Details)
+                    .HasForeignKey(p => p.PurchaseId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                entity.HasOne(p => p.Product)
+                    .WithMany()
+                    .HasForeignKey(p => p.ProductId)
+                    .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            modelBuilder.Entity<StockAlert>(entity =>
+            {
+                entity.Property(a => a.AlertType).HasConversion<string>().HasMaxLength(30);
+                entity.Property(a => a.Message).HasMaxLength(300);
+                entity.HasOne(a => a.Product)
+                    .WithMany()
+                    .HasForeignKey(a => a.ProductId)
+                    .OnDelete(DeleteBehavior.Cascade);
 });
 
         }

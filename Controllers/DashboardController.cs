@@ -4,12 +4,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Galaxium.Api.Services.Interfaces;
 using Galaxium.Api.DTOs.Dashboard;
+using Galaxium.Api.Utils;
 
 namespace Galaxium.Api.Controllers
 {
     [ApiController]
     [Route("api/dashboard")]
-    [Authorize]
+    [Authorize(Policy = GalaxiumPolicyNames.ReportsAccess)]
     [Produces("application/json")]
     public class DashboardController : ControllerBase
     {
@@ -125,6 +126,50 @@ namespace Galaxium.Api.Controllers
                 return StatusCode(500, new
                 {
                     message = "Error retrieving top products.",
+                    error = ex.Message
+                });
+            }
+        }
+
+        /// <summary>
+        /// Obtiene analitica temporal de ventas para dashboard
+        /// </summary>
+        /// <param name="days">Cantidad de dias para serie diaria (1-60)</param>
+        /// <param name="months">Cantidad de meses para serie mensual (1-24)</param>
+        /// <param name="years">Cantidad de anios para serie anual (1-10)</param>
+        /// <response code="200">Analitica generada correctamente</response>
+        /// <response code="400">Parametros invalidos</response>
+        /// <response code="500">Error interno</response>
+        [HttpGet("sales-analytics")]
+        [ProducesResponseType(typeof(DashboardSalesAnalyticsDTO), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(500)]
+        public async Task<ActionResult<DashboardSalesAnalyticsDTO>>
+            GetSalesAnalytics(
+                [FromQuery] int days = 14,
+                [FromQuery] int months = 12,
+                [FromQuery] int years = 5
+            )
+        {
+            try
+            {
+                var result = await _dashboardService
+                    .GetSalesAnalyticsAsync(days, months, years);
+
+                return Ok(result);
+            }
+            catch (ArgumentException ex)
+            {
+                return BadRequest(new
+                {
+                    message = ex.Message
+                });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new
+                {
+                    message = "Error retrieving dashboard sales analytics.",
                     error = ex.Message
                 });
             }

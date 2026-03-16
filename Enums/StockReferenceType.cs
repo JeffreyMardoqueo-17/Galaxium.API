@@ -9,6 +9,7 @@ namespace Galaxium.Api.Enums
     {
         Purchase = 1,     // entra stock
         Sale = 2,         // sale stock
-        Adjustment = 3    // corrección manual
+        Adjustment = 3,   // corrección manual
+        Return = 4        // devolución
     }
 }

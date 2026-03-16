@@ -35,6 +35,8 @@ namespace Galaxium.API.Services.Service
             var user = await _userRepository.AuthenticateUserAsync(username);
             if (user == null) return null;
 
+            if (!user.IsActive) return null;
+
             bool isValid = PasswordHasher.VerifyPassword(password, user.PasswordHash);
             if (!isValid) return null;
 

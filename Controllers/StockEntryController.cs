@@ -7,11 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Galaxium.Api.Utils;
 
 namespace Galaxium.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = GalaxiumPolicyNames.InventoryManagement)]
     public class StockEntryController : ControllerBase
     {
         private readonly IStockEntryService _stockEntryService;
@@ -28,7 +30,6 @@ namespace Galaxium.Api.Controllers
         // ===============================
         // POST: api/StockEntry
         [HttpPost]
-        [Authorize]
         public async Task<ActionResult<StockEntryResponseDTO>> CreateStockEntry(
             [FromBody] StockEntryCreateDTO request)
         {
@@ -64,6 +65,7 @@ namespace Galaxium.Api.Controllers
         // ===============================
         // GET: api/StockEntry/{id}
         [HttpGet("{id:int}")]
+        [Authorize(Policy = GalaxiumPolicyNames.ReportsAccess)]
         public async Task<ActionResult<StockEntryResponseDTO>> GetStockEntryById(int id)
         {
             var entry = await _stockEntryService.GetByIdStockEntryAsync(id);
@@ -77,6 +79,7 @@ namespace Galaxium.Api.Controllers
         // ===============================
         // GET: api/StockEntry
         [HttpGet]
+        [Authorize(Policy = GalaxiumPolicyNames.ReportsAccess)]
         public async Task<ActionResult<IEnumerable<StockEntryResponseDTO>>> GetAllStockEntries()
         {
             var entries = await _stockEntryService.GetStockEntriesAsync();

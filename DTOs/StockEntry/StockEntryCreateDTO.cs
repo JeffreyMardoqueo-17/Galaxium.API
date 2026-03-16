@@ -11,6 +11,8 @@ namespace Galaxium.Api.DTOs.StockEntry
         int Quantity,
         StockReferenceType ReferenceType,
         int? ReferenceId,
-        decimal? UnitCost
+      decimal? UnitCost,
+      string? Reason,
+      int? SupplierId
     );
 }

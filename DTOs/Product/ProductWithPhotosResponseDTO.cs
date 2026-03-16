@@ -15,6 +15,7 @@ namespace Galaxium.Api.DTOs.Product
         decimal? SalePrice,
         int Stock,
         int MinimumStock,
+        string UnitOfMeasure,
         bool IsActive,
         DateTime CreatedAt,
         int CategoryId,

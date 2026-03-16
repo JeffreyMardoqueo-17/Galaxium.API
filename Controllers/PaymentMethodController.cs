@@ -5,11 +5,14 @@ using System.Threading.Tasks;
 using Galaxium.API.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Galaxium.Api.DTOs.PaymentMethod;
+using Microsoft.AspNetCore.Authorization;
+using Galaxium.Api.Utils;
 
 namespace Galaxium.Api.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Policy = GalaxiumPolicyNames.SalesAccess)]
     public class PaymentMethodController : ControllerBase
     {
         private readonly IPaymentMethodService _paymentMethodService;

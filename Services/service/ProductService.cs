@@ -70,6 +70,33 @@ namespace Galaxium.Api.Services.service
             return await _productRepository.AddProductAsync(newProduct);
         }
 
+        public async Task<Product?> UpdateProductAsync(int productId, Product updateRequest)
+        {
+            if (productId <= 0)
+                throw new ArgumentException("Invalid product ID.");
+
+            if (string.IsNullOrWhiteSpace(updateRequest.Name))
+                throw new ArgumentException("El nombre del producto es obligatorio.");
+
+            if (updateRequest.MinimumStock < 0)
+                throw new ArgumentException("El stock minimo no puede ser negativo.");
+
+            var existing = await _productRepository.GetProductByIdAsync(productId);
+            if (existing == null)
+                throw new NotFoundBusinessException("Product not found.");
+
+            existing.Name = updateRequest.Name;
+            existing.CategoryId = updateRequest.CategoryId;
+            existing.Barcode = updateRequest.Barcode;
+            existing.MinimumStock = updateRequest.MinimumStock;
+            existing.CostPrice = updateRequest.CostPrice;
+            existing.SalePrice = updateRequest.SalePrice;
+            existing.IsActive = updateRequest.IsActive;
+            existing.UnitOfMeasure = updateRequest.UnitOfMeasure;
+
+            return await _productRepository.UpdateProductAsync(existing);
+        }
+
 
 
         public async Task<IEnumerable<Product>> GetProductsFilterAsync(ProductFilterModel filter)

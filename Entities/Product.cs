@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using Galaxium.Api.Entities;
+using Galaxium.Api.Enums;
 
 namespace Galaxium.API.Entities
 {
@@ -20,6 +21,7 @@ namespace Galaxium.API.Entities
 
         public int Stock { get; set; }
         public int MinimumStock { get; set; }
+        public UnitOfMeasure UnitOfMeasure { get; set; } = UnitOfMeasure.Unit;
 
         public bool IsActive { get; set; }
         public DateTime CreatedAt { get; set; }

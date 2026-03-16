@@ -109,7 +109,9 @@ public class EmailService : IEmailService
         string nombreCliente,
         Sale sale,
         IEnumerable<SaleDetail> detallesVenta,
-        string nombreVendedor
+      string nombreVendedor,
+      byte[]? facturaPdfBytes = null,
+      string? nombreArchivoPdf = null
     )
     {
         if (string.IsNullOrEmpty(emailReceptor))
@@ -186,6 +188,14 @@ public class EmailService : IEmailService
           <strong>Total:</strong>
           <strong>${sale.Total:F2}</strong>
         </div>
+        <div style='display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #666;'>
+          <span><strong>Monto recibido:</strong></span>
+          <span>${sale.AmountPaid:F2}</span>
+        </div>
+        <div style='display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: #666;'>
+          <span><strong>Vuelto:</strong></span>
+          <span>${sale.ChangeAmount:F2}</span>
+        </div>
         <div style='display: flex; justify-content: space-between; font-size: 14px; color: #666;'>
           <span><strong>Método de Pago:</strong></span>
           <span>{sale.PaymentMethod?.Name ?? "N/A"}</span>
@@ -197,10 +207,36 @@ public class EmailService : IEmailService
         Gracias por confiar en <strong>Galaxium</strong>. Si tienes alguna pregunta sobre tu pedido, no dudes en contactarnos.
       </p>
       <p style='text-align: center; color: #666;'>Esperamos verte de nuevo pronto.</p>
+      {(facturaPdfBytes is { Length: > 0 } ? "<p style='text-align: center; color: #007acc;'><strong>Tu factura en PDF va adjunta en este correo.</strong></p>" : "")}
       <p style='text-align: center; margin-top: 20px; font-size: 12px; color: #999;'>---<br/>Tu tienda de confianza</p>
     </div>
   </body>
 </html>";
+
+        if (facturaPdfBytes is { Length: > 0 })
+        {
+            using var cliente = CrearClienteSmtp();
+            using var mensaje = new MailMessage()
+            {
+                From = new MailAddress(_emailEmisor),
+                Subject = asunto,
+                Body = cuerpoHtml,
+                IsBodyHtml = true
+            };
+
+            mensaje.To.Add(emailReceptor);
+
+            var attachmentName = string.IsNullOrWhiteSpace(nombreArchivoPdf)
+                ? $"Factura-{sale.InvoiceNumber ?? sale.Id.ToString()}.pdf"
+                : nombreArchivoPdf;
+
+            var streamPdf = new System.IO.MemoryStream(facturaPdfBytes);
+            var attachment = new Attachment(streamPdf, attachmentName, "application/pdf");
+            mensaje.Attachments.Add(attachment);
+
+            await cliente.SendMailAsync(mensaje);
+            return;
+        }
 
         await EnviarEmailHtml(emailReceptor, asunto, cuerpoHtml);
     }

@@ -35,6 +35,9 @@ namespace Galaxium.Api.Entities
         public StockReferenceType ReferenceType { get; set; }
 
         public int? ReferenceId { get; set; }
+        public string? Reason { get; set; }
+        public int? SupplierId { get; set; }
+        public Supplier? Supplier { get; set; }
 
         // ==========================
         // AUDITORÍA

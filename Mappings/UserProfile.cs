@@ -20,7 +20,16 @@ namespace Galaxium.Api.Mappings
             // 
             // User -> UserResponse
             // 
-            CreateMap<User, UserResponse>();
+            CreateMap<User, UserResponse>()
+                .ConstructUsing(src => new UserResponse(
+                    src.Id,
+                    src.FullName,
+                    src.Username,
+                    src.RoleId,
+                    src.Role != null ? src.Role.Name : string.Empty,
+                    src.IsActive,
+                    src.CreatedAt
+                ));
 
             // 
             // Tuple -> AuthResponse 

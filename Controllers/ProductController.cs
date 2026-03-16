@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using Galaxium.Api.Utils;
 
 namespace Galaxium.Api.Controllers
 {
@@ -31,7 +32,7 @@ namespace Galaxium.Api.Controllers
         // GET: api/product
         // ===============================
         [HttpGet]
-        [Authorize]
+        [Authorize(Policy = GalaxiumPolicyNames.ReportsAccess)]
         public async Task<ActionResult<IEnumerable<ProductResponseDTO>>> GetProducts()
         {
             var products = await _productService.GetProductsAsync();
@@ -44,7 +45,7 @@ namespace Galaxium.Api.Controllers
         // GET: api/product/{id}
         // ===============================
         [HttpGet("{id:int}")]
-        [Authorize]
+        [Authorize(Policy = GalaxiumPolicyNames.ReportsAccess)]
         public async Task<ActionResult<ProductResponseDTO>> GetProductById(int id)
         {
             var product = await _productService.GetProductByIdAsync(id);
@@ -57,7 +58,7 @@ namespace Galaxium.Api.Controllers
         // POST: api/product
         // ===============================
         [HttpPost]
-        [Authorize]
+        [Authorize(Policy = GalaxiumPolicyNames.InventoryManagement)]
         public async Task<ActionResult<ProductResponseDTO>> CreateProduct(
          [FromBody] ProductCreateRequestDTO request)
         {
@@ -84,6 +85,25 @@ namespace Galaxium.Api.Controllers
             );
         }
 
+        [HttpPut("{id:int}")]
+        [Authorize(Policy = GalaxiumPolicyNames.InventoryManagement)]
+        public async Task<ActionResult<ProductResponseDTO>> UpdateProduct(
+            int id,
+            [FromBody] ProductUpdateRequestDTO request)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            var productEntity = _mapper.Map<Product>(request);
+            var updated = await _productService.UpdateProductAsync(id, productEntity);
+
+            if (updated == null)
+                return NotFound();
+
+            var response = _mapper.Map<ProductResponseDTO>(updated);
+            return Ok(response);
+        }
+
 
         // ===============================
         // GET: api/product/filter
@@ -100,7 +120,7 @@ namespace Galaxium.Api.Controllers
 
         // ===============================
         [HttpGet("filter")]
-        [Authorize]
+        [Authorize(Policy = GalaxiumPolicyNames.ReportsAccess)]
         public async Task<ActionResult<IEnumerable<ProductWithPhotosResponseDTO>>> GetProductsByFilter(
             [FromQuery] ProductFilterRequestDTO filterDto)
         {
@@ -118,7 +138,7 @@ namespace Galaxium.Api.Controllers
         // PATCH: api/product/price
         // ===============================
         [HttpPatch("price")]
-        [Authorize]
+        [Authorize(Policy = GalaxiumPolicyNames.InventoryManagement)]
         public async Task<ActionResult<ProductResponseDTO>> UpdateProductPrice(
      [FromBody] ProductUpdatePriceDto dto)
         {
@@ -156,7 +176,7 @@ namespace Galaxium.Api.Controllers
         // GET: api/product/with-photos
         // ===============================
         [HttpGet("with-photos")]
-        [Authorize]
+        [Authorize(Policy = GalaxiumPolicyNames.ReportsAccess)]
         public async Task<ActionResult<IEnumerable<ProductWithPhotosResponseDTO>>> GetProductsWithPhotos()
         {
             try

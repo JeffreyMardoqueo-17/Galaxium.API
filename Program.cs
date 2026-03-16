@@ -32,6 +32,7 @@ using Galaxium.Api.Services.Services;
 using Galaxium.Api.Mappings;
 using Microsoft.Extensions.Hosting;
 using Galaxium.Api.Services.service.StockMovements;
+using Galaxium.Api.Utils;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -151,7 +152,14 @@ builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 builder.Services.AddScoped<IStockMovementHandler, PurchaseStockMovementHandler>();
 builder.Services.AddScoped<IStockMovementHandler, SaleStockMovementHandler>();
 builder.Services.AddScoped<IStockMovementHandler, AdjustmentStockMovementHandler>();
+builder.Services.AddScoped<IStockMovementHandler, ReturnStockMovementHandler>();
 builder.Services.AddScoped<IStockMovementHandlerFactory, StockMovementHandlerFactory>();
+
+builder.Services.AddScoped<ISupplierRepository, SupplierRepository>();
+builder.Services.AddScoped<ISupplierService, SupplierService>();
+builder.Services.AddScoped<IPurchaseRepository, PurchaseRepository>();
+builder.Services.AddScoped<IPurchaseService, PurchaseService>();
+builder.Services.AddScoped<IStockAlertService, StockAlertService>();
 
 //validaciones
 builder.Services.AddScoped<IValidator<Customer>, CustomerValidator>();
@@ -168,6 +176,9 @@ builder.Services.AddScoped<IPaymentMethodRepository, PaymentMethodRepository>();
 
 builder.Services.AddScoped<ISaleService, SaleService>();
 builder.Services.AddScoped<ISaleRepository, SaleRepository>();
+builder.Services.AddScoped<ISalePdfService, SalePdfService>();
+builder.Services.AddScoped<ISaleReportingService, SaleReportingService>();
+builder.Services.AddScoped<IReportService, ReportService>();
 
 builder.Services.AddScoped<ISaleDetailService, SaleDetailService>();
 builder.Services.AddScoped<ISaleDetailRepository, SaleDetailRepository>();
@@ -275,6 +286,8 @@ builder.Services.AddAuthentication(options =>
         }
     };
 });
+
+builder.Services.AddAuthorization(AuthorizationPolicies.Configure);
 
 /// servicio de claudinary
 builder.Services.AddSingleton(sp =>

@@ -15,5 +15,13 @@ namespace Galaxium.Api.DTOs.Dashboard
         public int TotalStock { get; set; }
 
         public decimal NetProfit { get; set; }
+
+        public int TodaySales { get; set; }
+
+        public decimal TodayRevenue { get; set; }
+
+        public int ExhaustedProducts { get; set; }
+
+        public List<DashboardRecentSaleDto> RecentSales { get; set; } = new();
     }
 }

@@ -5,6 +5,7 @@ using System;
 using Galaxium.API.Models;
 using Galaxium.Api.DTOs.Product;
 using Galaxium.Api.DTOs.productphoto;
+using Galaxium.Api.Enums;
 
 namespace Galaxium.Api.Mappings
 {
@@ -27,6 +28,7 @@ namespace Galaxium.Api.Mappings
         src.SalePrice,
         src.Stock,
         src.MinimumStock,
+        src.UnitOfMeasure.ToString(),
         src.IsActive,
         src.CreatedAt,
         src.CategoryId,
@@ -41,6 +43,11 @@ namespace Galaxium.Api.Mappings
             // CREATE → ENTITY
             // ===============================
             CreateMap<ProductCreateRequestDTO, Product>()
+            .ForMember(dest => dest.UnitOfMeasure,
+                opt => opt.MapFrom(src =>
+                    string.IsNullOrWhiteSpace(src.UnitOfMeasure)
+                        ? UnitOfMeasure.Unit
+                        : Enum.Parse<UnitOfMeasure>(src.UnitOfMeasure, true)))
             .ForMember(dest => dest.Stock, opt => opt.Ignore())
             .ForMember(dest => dest.CostPrice, opt => opt.Ignore())
             .ForMember(dest => dest.SalePrice, opt => opt.Ignore())
@@ -60,11 +67,14 @@ namespace Galaxium.Api.Mappings
             // UPDATE → ENTITY
             // ===============================
             CreateMap<ProductUpdateRequestDTO, Product>()
+            .ForMember(dest => dest.UnitOfMeasure,
+            opt => opt.MapFrom(src =>
+                string.IsNullOrWhiteSpace(src.UnitOfMeasure)
+                    ? UnitOfMeasure.Unit
+                    : Enum.Parse<UnitOfMeasure>(src.UnitOfMeasure, true)))
          .ForMember(dest => dest.Id, opt => opt.Ignore())
          .ForMember(dest => dest.SKU, opt => opt.Ignore())
          .ForMember(dest => dest.Stock, opt => opt.Ignore())
-         .ForMember(dest => dest.CostPrice, opt => opt.Ignore())
-         .ForMember(dest => dest.SalePrice, opt => opt.Ignore())
          .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
          .ForMember(dest => dest.CreatedByUserId, opt => opt.Ignore())
          .ForMember(dest => dest.Category, opt => opt.Ignore())
@@ -86,6 +96,7 @@ namespace Galaxium.Api.Mappings
          src.SalePrice,
          src.Stock,
          src.MinimumStock,
+         src.UnitOfMeasure.ToString(),
          src.IsActive,
          src.CreatedAt,
          src.CategoryId,

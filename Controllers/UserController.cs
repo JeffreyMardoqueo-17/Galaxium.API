@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Hosting;
+using Galaxium.Api.Utils;
 
 namespace Galaxium.Api.Controllers
 {
@@ -42,6 +43,7 @@ namespace Galaxium.Api.Controllers
 
         // POST: api/User/register
         [HttpPost("register")]
+        [Authorize(Policy = GalaxiumPolicyNames.AdminOnly)]
         public async Task<IActionResult> Register([FromBody] UserCreateRequest request)
         {
             if (string.IsNullOrWhiteSpace(request.Password))
@@ -135,7 +137,7 @@ namespace Galaxium.Api.Controllers
             return Ok();
         }
         [HttpPost("logout")]
-        //[Authorize]
+        [Authorize]
         public async Task<IActionResult> Logout()
         {
             var refreshToken = Request.Cookies[RefreshTokenCookieName];
@@ -164,13 +166,31 @@ namespace Galaxium.Api.Controllers
             return Ok(response);
         }
         [HttpGet]
-        [Authorize]
+        [Authorize(Policy = GalaxiumPolicyNames.AdminOrSupervisor)]
         public async Task<IActionResult> GetAllUsers()
         {
             var users = await _userService.GetAllUsersAsync();
 
             // Entity List -> DTO List (AutoMapper)
             var response = _mapper.Map<List<UserResponse>>(users);
+            return Ok(response);
+        }
+
+        [HttpPatch("{userId:int}/role")]
+        [Authorize(Policy = GalaxiumPolicyNames.AdminOnly)]
+        public async Task<IActionResult> UpdateRole(int userId, [FromBody] UserUpdateRoleRequest request)
+        {
+            var updated = await _userService.UpdateUserRoleAsync(userId, request.RoleId);
+            var response = _mapper.Map<UserResponse>(updated);
+            return Ok(response);
+        }
+
+        [HttpPatch("{userId:int}/status")]
+        [Authorize(Policy = GalaxiumPolicyNames.AdminOnly)]
+        public async Task<IActionResult> UpdateStatus(int userId, [FromBody] UserUpdateStatusRequest request)
+        {
+            var updated = await _userService.UpdateUserStatusAsync(userId, request.IsActive);
+            var response = _mapper.Map<UserResponse>(updated);
             return Ok(response);
         }
 

@@ -11,6 +11,7 @@ string? Barcode,
     decimal? SalePrice,
     int Stock,
     int MinimumStock,
+    string UnitOfMeasure,
     bool IsActive,
     DateTime CreatedAt,
 
