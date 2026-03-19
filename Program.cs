@@ -12,6 +12,7 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Microsoft.Extensions.Options;
 using Galaxium.API.Entities;
+using Galaxium.Api.Entities;
 using GalaxiumERP.API.Repository.repos;
 using Galaxium.API.Services.service;
 using Galaxium.Api.Services.Interfaces;
@@ -365,6 +366,26 @@ using (var scope = app.Services.CreateScope())
         {
             Console.WriteLine("ℹ️ Los roles ya existen, no se insertan duplicados");
         }
+
+        // Seed de métodos de pago
+        if (!db.PaymentMethod.Any())
+        {
+            db.PaymentMethod.AddRange(
+                new PaymentMethod { Name = "Efectivo", Description = "Pago en efectivo", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new PaymentMethod { Name = "Tarjeta de crédito", Description = "Pago con tarjeta de crédito", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new PaymentMethod { Name = "Tarjeta de débito", Description = "Pago con tarjeta de débito", IsActive = true, CreatedAt = DateTime.UtcNow },
+                new PaymentMethod { Name = "Transferencia bancaria", Description = "Pago por transferencia bancaria", IsActive = true, CreatedAt = DateTime.UtcNow }
+            );
+            db.SaveChanges();
+            Console.WriteLine("✅ Métodos de pago esenciales insertados correctamente");
+        }
+        else
+        {
+            Console.WriteLine("ℹ️ Los métodos de pago ya existen, no se insertan duplicados");
+        }
+
+        // Aquí puedes agregar más seed de datos imprescindibles (estados, unidades, etc.)
+
         Console.WriteLine("✅ Migraciones y seed completados");
     }
     catch (Exception ex)
