@@ -367,17 +367,14 @@ using (var scope = app.Services.CreateScope())
             Console.WriteLine("ℹ️ Los roles ya existen, no se insertan duplicados");
         }
 
-        // Seed de métodos de pago
+        // Seed de métodos de pago (SOLO EFECTIVO)
         if (!db.PaymentMethod.Any())
         {
-            db.PaymentMethod.AddRange(
-                new PaymentMethod { Name = "Efectivo", Description = "Pago en efectivo", IsActive = true, CreatedAt = DateTime.UtcNow },
-                new PaymentMethod { Name = "Tarjeta de crédito", Description = "Pago con tarjeta de crédito", IsActive = true, CreatedAt = DateTime.UtcNow },
-                new PaymentMethod { Name = "Tarjeta de débito", Description = "Pago con tarjeta de débito", IsActive = true, CreatedAt = DateTime.UtcNow },
-                new PaymentMethod { Name = "Transferencia bancaria", Description = "Pago por transferencia bancaria", IsActive = true, CreatedAt = DateTime.UtcNow }
+            db.PaymentMethod.Add(
+                new PaymentMethod { Id = 1, Name = "Efectivo", Description = "Pago en efectivo", IsActive = true, CreatedAt = DateTime.UtcNow }
             );
             db.SaveChanges();
-            Console.WriteLine("✅ Métodos de pago esenciales insertados correctamente");
+            Console.WriteLine("✅ Método de pago 'Efectivo' insertado correctamente");
         }
         else
         {

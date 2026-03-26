@@ -198,6 +198,11 @@ namespace Galaxium.API.Data
                 new Role { Id = 2, Name = "Cashier" },
                 new Role { Id = 3, Name = "Supervisor" }
             );
+
+            // Seed de PaymentMethod (SOLO EFECTIVO)
+            modelBuilder.Entity<PaymentMethod>().HasData(
+                new PaymentMethod { Id = 1, Name = "Efectivo", Description = "Pago en efectivo", IsActive = true, CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc) }
+            );
         }
 
 

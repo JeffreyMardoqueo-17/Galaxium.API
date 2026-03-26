@@ -22,6 +22,7 @@ namespace Galaxium.Api.Services.Implementations
         private readonly IUnitOfWork _unitOfWork;
         private readonly ISalePdfService _salePdfService;
         private readonly IStockAlertService _stockAlertService;
+        private readonly IPaymentMethodRepository _paymentMethodRepository;
 
         public SaleService(
             ISaleRepository saleRepository,
@@ -32,7 +33,8 @@ namespace Galaxium.Api.Services.Implementations
             IUserRepository userRepository,
             IUnitOfWork unitOfWork,
             ISalePdfService salePdfService,
-            IStockAlertService stockAlertService
+            IStockAlertService stockAlertService,
+            IPaymentMethodRepository paymentMethodRepository
         )
         {
             _saleRepository = saleRepository;
@@ -44,6 +46,7 @@ namespace Galaxium.Api.Services.Implementations
             _unitOfWork = unitOfWork;
             _salePdfService = salePdfService;
             _stockAlertService = stockAlertService;
+            _paymentMethodRepository = paymentMethodRepository;
         }
         // ============================================
         // Crear venta completa (cabecera + detalles)
@@ -62,26 +65,29 @@ namespace Galaxium.Api.Services.Implementations
         // ============================================ aqui tengo qeu agregar cuanto dinero me dio cada cliente para calcular el vuelto
         public async Task<Sale> CreateSaleAsync(Sale sale, IEnumerable<SaleDetail> saleDetails)
         {
-            // 1️⃣ Validaciones generales
+            // 1 Validación de método de pago activo
+            var activePaymentMethods = await _paymentMethodRepository.GetAllAsync();
+            if (!activePaymentMethods.Any())
+                throw new InvalidOperationException("No hay métodos de pago activos en el sistema. Contacte a soporte o ejecute el script de inicialización correctamente.");
+
+            var paymentMethod = activePaymentMethods.FirstOrDefault(pm => pm.Id == sale.PaymentMethodId);
+            if (paymentMethod == null)
+                throw new InvalidOperationException($"El método de pago seleccionado (ID: {sale.PaymentMethodId}) no está activo o no existe.");
+
+            // 2️ Validaciones generales
             _saleRules.ValidateHasProducts(saleDetails.Count());
             _saleRules.ValidateSeller(sale.UserId);
             _saleRules.ValidatePaymentMethod(sale.PaymentMethodId);
 
-            //  Validar cada detalle de producto y cargar Product desde DB
+            // 3️ Validar cada detalle de producto y cargar Product desde DB
             foreach (var detail in saleDetails)
             {
-                // Traer producto desde repositorio
                 var product = await _productRepository.GetProductByIdAsync(detail.ProductId);
                 if (product == null)
                     throw new InvalidOperationException($"Producto Id {detail.ProductId} no existe.");
 
-                // no asigno detail.Product para evitar conflictos en EF Core tracking
-
-                // ⚠️ ADVERTENCIA: Producto inactivo en lugar de excepción
                 if (!product.IsActive)
-                {
                     Console.WriteLine($"⚠️ ADVERTENCIA: El producto '{product.Name}' (Id: {product.Id}) está inactivo pero se permitirá la venta.");
-                }
 
                 if (!product.SalePrice.HasValue || product.SalePrice.Value <= 0)
                     throw new InvalidOperationException($"El producto '{product.Name}' no tiene precio asignado.");
@@ -92,31 +98,25 @@ namespace Galaxium.Api.Services.Implementations
                 if (detail.Quantity > product.Stock)
                     throw new InvalidOperationException($"No hay suficiente stock para el producto '{product.Name}'. Stock disponible: {product.Stock}");
 
-                // Asignar precios (SubTotal lo calcula SQL Server automáticamente)
                 detail.UnitPrice = product.SalePrice.Value;
                 detail.UnitCost = product.CostPrice ?? 0m;
             }
 
-            // calcula totales de la venta
-            // Calculamos SubTotal manualmente antes de guardar
+            // 4️ Calcula totales de la venta
             sale.SubTotal = saleDetails.Sum(d => d.Quantity * d.UnitPrice);
             _saleRules.ValidateDiscount(sale.Discount);
             _saleRules.ValidateDiscountLimit(sale.Discount, sale.SubTotal);
             sale.Total = _saleRules.CalculateTotal(sale.SubTotal, sale.Discount);
-
             _saleRules.ValidateTotal(sale.Total);
 
             // 5️⃣ Validar AmountPaid y calcular ChangeAmount
             _saleRules.ValidateAmountPaid(sale.AmountPaid, sale.Total, sale.PaymentMethodId);
-            
-            // Si el método de pago es efectivo (ID = 1), calcular el cambio
             if (sale.PaymentMethodId == 1 && sale.AmountPaid > 0)
             {
                 sale.ChangeAmount = _saleRules.CalculateChange(sale.AmountPaid, sale.Total);
             }
             else
             {
-                // Para otros métodos de pago, AmountPaid y ChangeAmount son 0
                 sale.AmountPaid = 0;
                 sale.ChangeAmount = 0;
             }
@@ -125,24 +125,30 @@ namespace Galaxium.Api.Services.Implementations
             sale.SaleDate = DateTime.UtcNow;
             sale.Status = "COMPLETED";
 
-            // 4️⃣ Delegar al repository la creación y manejo de stock
-            var ventaCreada = await _unitOfWork.ExecuteInTransactionAsync(
-                () => _saleRepository.CreateSaleWithDetailsAsync(sale, saleDetails));
-
-            // 5️⃣ Enviar email de confirmación de compra (no crítico, se ejecuta pero no falla la transacción)
+            // 6️⃣ Ejecutar todo en transacción (UnitOfWork)
+            Sale ventaCreada;
             try
             {
-                // Obtener datos del cliente
+                ventaCreada = await _unitOfWork.ExecuteInTransactionAsync(
+                    () => _saleRepository.CreateSaleWithDetailsAsync(sale, saleDetails));
+            }
+            catch (Exception ex)
+            {
+                // Loguear y lanzar error claro
+                Console.WriteLine($"❌ Error crítico al guardar la venta: {ex.Message}");
+                throw new InvalidOperationException("Ocurrió un error al guardar la venta. Ningún cambio fue aplicado. Detalle: " + ex.Message);
+            }
+
+            // 7️⃣ Envío de email y alertas fuera de la transacción
+            try
+            {
                 if (ventaCreada.CustomerId.HasValue)
                 {
                     var cliente = await _customerRepository.GetByIdCustomerAsync(ventaCreada.CustomerId.Value);
                     if (cliente != null && !string.IsNullOrEmpty(cliente.Email))
                     {
-                        // Obtener datos del vendedor
                         var vendedor = await _userRepository.GetUserByIdAsync(ventaCreada.UserId);
                         var nombreVendedor = vendedor?.FullName ?? "Vendedor";
-
-                        // Construir una copia para email sin mutar entidades rastreadas por EF Core.
                         var detallesConProducto = new List<SaleDetail>();
                         foreach (var detalle in saleDetails)
                         {
@@ -162,17 +168,12 @@ namespace Galaxium.Api.Services.Implementations
                                     }
                             });
                         }
-
-                        // Asignar PaymentMethod desde la venta
                         if (ventaCreada.PaymentMethod == null)
                         {
                             ventaCreada.PaymentMethod = new PaymentMethod { Name = "Efectivo" };
                         }
-
-                        // Enviar email
                         var invoicePdfBytes = _salePdfService.GenerateInvoicePdf(ventaCreada);
                         var invoiceFileName = $"Factura-{ventaCreada.InvoiceNumber ?? ventaCreada.Id.ToString()}.pdf";
-
                         await _emailService.EnviarEmailCompraBienvenida(
                             cliente.Email,
                             cliente.FullName,
@@ -187,7 +188,6 @@ namespace Galaxium.Api.Services.Implementations
             }
             catch (Exception ex)
             {
-                // Loguear el error de email pero no fallar la venta
                 Console.WriteLine($"⚠️ Error al enviar email de compra: {ex.Message}");
             }
 
@@ -197,7 +197,6 @@ namespace Galaxium.Api.Services.Implementations
             }
             catch (Exception ex)
             {
-                // Las alertas son un efecto secundario; no deben romper la venta ya confirmada.
                 Console.WriteLine($"⚠️ Error al refrescar alertas de stock: {ex.Message}");
             }
 
