@@ -8,7 +8,7 @@ namespace Galaxium.API.Repository.Interfaces
 {
     public interface IProductPhotoRepository
     {
-         Task AddAsync(ProductPhoto photo);
-    Task<int> CountByProductAsync(int productId);
+        Task AddAsync(ProductPhoto photo);
+        Task<int> CountByProductAsync(int productId);
     }
 }

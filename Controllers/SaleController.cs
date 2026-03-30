@@ -9,7 +9,6 @@ using Galaxium.Api.Utils;
 using Galaxium.Api.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using Galaxium.API.DTOs;
 
 namespace Galaxium.Api.Controllers
 {

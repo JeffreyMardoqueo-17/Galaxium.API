@@ -119,30 +119,6 @@ CREATE TABLE IF NOT EXISTS "Supplier" (
     "CreatedAt" TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
--- =============================================
--- TABLA: StockEntry
--- =============================================
-CREATE TABLE IF NOT EXISTS "StockEntry" (
-    "Id" SERIAL PRIMARY KEY,
-    "ProductId" INT NOT NULL,
-    "UserId" INT NOT NULL,
-    "Quantity" INT NOT NULL,
-    "RemainingQuantity" INT NOT NULL,
-    "UnitCost" DECIMAL(18,2) NOT NULL,
-    "TotalCost" DECIMAL(18,2) GENERATED ALWAYS AS (Quantity * UnitCost) STORED,
-    "ReferenceType" INTEGER NOT NULL DEFAULT 1,
-    "ReferenceId" INT,
-    "Reason" VARCHAR(300),
-    "SupplierId" INT,
-    "CreatedAt" TIMESTAMP NOT NULL DEFAULT NOW(),
-    "IsActive" BOOLEAN NOT NULL DEFAULT TRUE,
-    CONSTRAINT "FK_StockEntry_Product" FOREIGN KEY ("ProductId") REFERENCES "Product"("Id"),
-    CONSTRAINT "FK_StockEntry_User" FOREIGN KEY ("UserId") REFERENCES "User"("Id"),
-    CONSTRAINT "FK_StockEntry_Supplier" FOREIGN KEY ("SupplierId") REFERENCES "Supplier"("Id")
-);
-
-CREATE INDEX IF NOT EXISTS "IX_StockEntry_ProductId_CreatedAt" ON "StockEntry"("ProductId", "CreatedAt" DESC);
-CREATE INDEX IF NOT EXISTS "IX_StockEntry_SupplierId" ON "StockEntry"("SupplierId");
 
 -- =============================================
 -- TABLA: Customer

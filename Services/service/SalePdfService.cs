@@ -9,6 +9,8 @@ namespace Galaxium.Api.Services.Implementations;
 
 public class SalePdfService : ISalePdfService
 {
+    private static readonly TimeZoneInfo ElSalvadorTimeZone = TimeZoneInfo.FindSystemTimeZoneById("Central America Standard Time");
+
     public byte[] GenerateInvoicePdf(Sale sale)
     {
         using var stream = new MemoryStream();
@@ -26,7 +28,8 @@ public class SalePdfService : ISalePdfService
         double y = 36;
         DrawText(gfx, "Galaxium ERP", titleFont, 40, ref y);
         DrawText(gfx, $"Factura: {sale.InvoiceNumber ?? $"VENTA-{sale.Id}"}", subtitleFont, 40, ref y);
-        DrawText(gfx, $"Fecha: {sale.SaleDate:dd/MM/yyyy HH:mm}", subtitleFont, 40, ref y);
+        var localSaleDate = TimeZoneInfo.ConvertTimeFromUtc(sale.SaleDate, ElSalvadorTimeZone);
+        DrawText(gfx, $"Fecha: {localSaleDate:dd/MM/yyyy HH:mm}", subtitleFont, 40, ref y);
         DrawText(gfx, $"Cliente: {sale.Customer?.FullName ?? "Consumidor final"}", subtitleFont, 40, ref y);
         DrawText(gfx, $"Vendedor: {sale.User?.FullName ?? "Usuario interno"}", subtitleFont, 40, ref y);
         DrawText(gfx, $"Metodo de pago: {sale.PaymentMethod?.Name ?? "No definido"}", subtitleFont, 40, ref y);
@@ -127,7 +130,8 @@ public class SalePdfService : ISalePdfService
 
             var productsSold = sale.Details?.Sum(d => d.Quantity) ?? 0;
             DrawText(gfx, Truncate(sale.InvoiceNumber ?? $"VENTA-{sale.Id}", 15), textFont, 40, ref y, 13);
-            DrawText(gfx, sale.SaleDate.ToString("dd/MM/yyyy", culture), textFont, 130, y - 13);
+            var localReportDate = TimeZoneInfo.ConvertTimeFromUtc(sale.SaleDate, ElSalvadorTimeZone);
+            DrawText(gfx, localReportDate.ToString("dd/MM/yyyy", culture), textFont, 130, y - 13);
             DrawText(gfx, Truncate(sale.Customer?.FullName ?? "Consumidor final", 20), textFont, 200, y - 13);
             DrawText(gfx, Truncate(sale.PaymentMethod?.Name ?? "N/A", 12), textFont, 320, y - 13);
             DrawText(gfx, productsSold.ToString(CultureInfo.InvariantCulture), textFont, 430, y - 13);

@@ -10,7 +10,7 @@
     <EnableDefaultContentItems>true</EnableDefaultContentItems>
     <CopyRefAssembliesToPublishDirectory>true</CopyRefAssembliesToPublishDirectory>
     <CopyOutputSymbolsToPublishDirectory>true</CopyOutputSymbolsToPublishDirectory>
-    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
     <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
 

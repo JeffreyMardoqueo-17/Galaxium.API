@@ -3,7 +3,6 @@ using Galaxium.Api.DTOs.Product;
 using Galaxium.Api.Services.Interfaces;
 using Galaxium.API.DTOs.Product;
 using Galaxium.API.Entities;
-using Galaxium.API.Entities;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;

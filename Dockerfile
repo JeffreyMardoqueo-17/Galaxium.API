@@ -23,8 +23,13 @@ RUN dotnet publish "./Galaxium.Api.csproj" -c $BUILD_CONFIGURATION -o /app/publi
 
 # Esta fase se usa en producción o cuando se ejecuta desde VS en modo normal (valor predeterminado cuando no se usa la configuración de depuración)
 FROM base AS final
+USER root
 WORKDIR /app
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends curl fontconfig fonts-dejavu-core \
+    && rm -rf /var/lib/apt/lists/* \
+    && fc-cache -f
 COPY --from=publish /app/publish .
-HEALTHCHECK --interval=10s --timeout=5s --retries=3 \
-	CMD curl -f http://localhost:8080/health || exit 1
+RUN mkdir -p /app/dataprotection-keys && chown -R $APP_UID:$APP_UID /app/dataprotection-keys && chmod 777 /app/dataprotection-keys
+USER $APP_UID
 ENTRYPOINT ["dotnet", "Galaxium.Api.dll"]

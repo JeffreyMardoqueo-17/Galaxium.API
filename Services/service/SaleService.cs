@@ -8,6 +8,7 @@ using Galaxium.Api.Services.Interfaces;
 using Galaxium.Api.Services.Rules;
 using Galaxium.API.Repository.Interfaces;
 using Galaxium.Api.Entities;
+using Microsoft.Extensions.Logging;
 
 namespace Galaxium.Api.Services.Implementations
 {
@@ -23,6 +24,7 @@ namespace Galaxium.Api.Services.Implementations
         private readonly ISalePdfService _salePdfService;
         private readonly IStockAlertService _stockAlertService;
         private readonly IPaymentMethodRepository _paymentMethodRepository;
+        private readonly ILogger<SaleService> _logger;
 
         public SaleService(
             ISaleRepository saleRepository,
@@ -34,7 +36,8 @@ namespace Galaxium.Api.Services.Implementations
             IUnitOfWork unitOfWork,
             ISalePdfService salePdfService,
             IStockAlertService stockAlertService,
-            IPaymentMethodRepository paymentMethodRepository
+            IPaymentMethodRepository paymentMethodRepository,
+            ILogger<SaleService> logger
         )
         {
             _saleRepository = saleRepository;
@@ -47,6 +50,7 @@ namespace Galaxium.Api.Services.Implementations
             _salePdfService = salePdfService;
             _stockAlertService = stockAlertService;
             _paymentMethodRepository = paymentMethodRepository;
+            _logger = logger;
         }
         // ============================================
         // Crear venta completa (cabecera + detalles)
@@ -87,7 +91,7 @@ namespace Galaxium.Api.Services.Implementations
                     throw new InvalidOperationException($"Producto Id {detail.ProductId} no existe.");
 
                 if (!product.IsActive)
-                    Console.WriteLine($"⚠️ ADVERTENCIA: El producto '{product.Name}' (Id: {product.Id}) está inactivo pero se permitirá la venta.");
+                    _logger.LogWarning("El producto {ProductName} (Id: {ProductId}) está inactivo pero se permitirá la venta.", product.Name, product.Id);
 
                 if (!product.SalePrice.HasValue || product.SalePrice.Value <= 0)
                     throw new InvalidOperationException($"El producto '{product.Name}' no tiene precio asignado.");
@@ -104,7 +108,14 @@ namespace Galaxium.Api.Services.Implementations
 
             // 4️ Calcula totales de la venta
             sale.SubTotal = saleDetails.Sum(d => d.Quantity * d.UnitPrice);
-            _saleRules.ValidateDiscount(sale.Discount);
+            _saleRules.ValidateDiscount(sale.Discount, sale.IsDiscountPercentage);
+            
+            // Si es descuento porcentual, calcular el monto del descuento
+            if (sale.IsDiscountPercentage)
+            {
+                sale.Discount = _saleRules.CalculateDiscountAmount(sale.Discount, sale.SubTotal);
+            }
+            
             _saleRules.ValidateDiscountLimit(sale.Discount, sale.SubTotal);
             sale.Total = _saleRules.CalculateTotal(sale.SubTotal, sale.Discount);
             _saleRules.ValidateTotal(sale.Total);
@@ -135,7 +146,7 @@ namespace Galaxium.Api.Services.Implementations
             catch (Exception ex)
             {
                 // Loguear y lanzar error claro
-                Console.WriteLine($"❌ Error crítico al guardar la venta: {ex.Message}");
+                _logger.LogError(ex, "Error crítico al guardar la venta para el usuario {UserId}", sale.UserId);
                 throw new InvalidOperationException("Ocurrió un error al guardar la venta. Ningún cambio fue aplicado. Detalle: " + ex.Message);
             }
 
@@ -172,8 +183,22 @@ namespace Galaxium.Api.Services.Implementations
                         {
                             ventaCreada.PaymentMethod = new PaymentMethod { Name = "Efectivo" };
                         }
-                        var invoicePdfBytes = _salePdfService.GenerateInvoicePdf(ventaCreada);
-                        var invoiceFileName = $"Factura-{ventaCreada.InvoiceNumber ?? ventaCreada.Id.ToString()}.pdf";
+                        byte[]? invoicePdfBytes = null;
+                        string? invoiceFileName = null;
+
+                        try
+                        {
+                            invoicePdfBytes = _salePdfService.GenerateInvoicePdf(ventaCreada);
+                            invoiceFileName = $"Factura-{ventaCreada.InvoiceNumber ?? ventaCreada.Id.ToString()}.pdf";
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogWarning(
+                                ex,
+                                "No se pudo generar el PDF de la factura para la venta {SaleId}. Se enviará el correo sin adjunto.",
+                                ventaCreada.Id);
+                        }
+
                         await _emailService.EnviarEmailCompraBienvenida(
                             cliente.Email,
                             cliente.FullName,
@@ -188,7 +213,7 @@ namespace Galaxium.Api.Services.Implementations
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"⚠️ Error al enviar email de compra: {ex.Message}");
+                _logger.LogError(ex, "Error al enviar email de compra para la venta {SaleId}", ventaCreada.Id);
             }
 
             try
@@ -197,7 +222,7 @@ namespace Galaxium.Api.Services.Implementations
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"⚠️ Error al refrescar alertas de stock: {ex.Message}");
+                _logger.LogWarning(ex, "Error al refrescar alertas de stock después de la venta {SaleId}", ventaCreada.Id);
             }
 
             return ventaCreada;

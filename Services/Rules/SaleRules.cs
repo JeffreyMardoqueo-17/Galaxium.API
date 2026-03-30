@@ -45,13 +45,17 @@ namespace Galaxium.Api.Services.Rules
         }
 
         // ==========================================
-        // 5. Validar descuento
+        // 5. Validar descuento (monto o porcentaje)
         // ==========================================
-        public void ValidateDiscount(decimal discount)
+        public void ValidateDiscount(decimal discount, bool isPercentage = false)
         {
             if (discount < 0)
                 throw new InvalidOperationException(
                     "El descuento no puede ser negativo.");
+
+            if (isPercentage && discount > 100)
+                throw new InvalidOperationException(
+                    "El descuento porcentual no puede exceder el 100%.");
         }
 
         // ==========================================
@@ -62,6 +66,18 @@ namespace Galaxium.Api.Services.Rules
             if (discount > subTotal)
                 throw new InvalidOperationException(
                     "El descuento no puede ser mayor al subtotal.");
+        }
+
+        // ==========================================
+        // 6.5 Calcular descuento en dinero desde porcentaje
+        // ==========================================
+        public decimal CalculateDiscountAmount(decimal percentage, decimal subTotal)
+        {
+            if (percentage < 0 || percentage > 100)
+                throw new InvalidOperationException(
+                    "El porcentaje de descuento debe estar entre 0 y 100.");
+
+            return Math.Round(subTotal * (percentage / 100m), 2);
         }
 
         // ==========================================

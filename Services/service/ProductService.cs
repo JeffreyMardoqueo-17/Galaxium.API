@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Galaxium.Api.Services.Interfaces;
 using Galaxium.API.Common;
 using Galaxium.API.Entities;
-using Galaxium.API.Entities;
 using Galaxium.API.Repository.Interfaces;
 
 namespace Galaxium.Api.Services.service
@@ -125,7 +124,7 @@ namespace Galaxium.Api.Services.service
                 return null; // Producto no encontrado
 
             // Validación de stock: no se puede asignar precio si no hay stock
-            if (product.Stock == null || product.Stock <= 0)
+            if (product.Stock <= 0)
                 throw new InvalidOperationException(
                     "No se puede asignar precio a un producto sin stock. Por favor registra primero la compra.");
 

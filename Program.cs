@@ -52,7 +52,9 @@ if (!builder.Environment.IsDevelopment())
 
 var defaultConnection = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
     ?? builder.Configuration.GetConnectionString("DefaultConnection");
-if (string.IsNullOrWhiteSpace(defaultConnection))
+var isDesignTime = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") == "DesignTime" 
+    || Environment.GetEnvironmentVariable("EF_DESIGN_TIME") == "1";
+if (string.IsNullOrWhiteSpace(defaultConnection) && !isDesignTime)
 {
     throw new InvalidOperationException(
         "Falta la variable de entorno 'ConnectionStrings__DefaultConnection'. " +
@@ -228,7 +230,7 @@ builder.Services.AddAuthentication(options =>
         ValidAudience = jwtOptions.Audience,
         IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtOptions.Key)),
 
-        ClockSkew = TimeSpan.Zero
+        ClockSkew = TimeSpan.FromSeconds(30)
     };
 
     options.Events = new JwtBearerEvents

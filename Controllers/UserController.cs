@@ -256,7 +256,7 @@ namespace Galaxium.Api.Controllers
             Response.Cookies.Append(
                 AccessTokenCookieName,
                 accessToken,
-                BuildCookieOptions(DateTime.UtcNow.AddMinutes(15))
+                BuildCookieOptions(DateTime.UtcNow.AddHours(12))
             );
 
             Response.Cookies.Append(

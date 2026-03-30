@@ -7,6 +7,6 @@ namespace Galaxium.Api.Services.Interfaces
 {
     public interface IProductPhotoService
     {
-         Task UploadAsync(int productId, IFormFile file, bool isPrimary);
+        Task UploadAsync(int productId, IFormFile file, bool isPrimary);
     }
 }

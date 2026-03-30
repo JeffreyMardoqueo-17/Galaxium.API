@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using System.Threading.Tasks;
 using Galaxium.Api.Services.Interfaces;
 using Galaxium.API.Entities;
+using System.Collections.Generic;
 
 public class EmailService : IEmailService
 {
@@ -24,12 +25,37 @@ public class EmailService : IEmailService
 
     private SmtpClient CrearClienteSmtp()
     {
+        ValidarConfiguracionSmtp();
+
         return new SmtpClient(_smtpHost, _smtpPort)
         {
             EnableSsl = true,
             UseDefaultCredentials = false,
             Credentials = new NetworkCredential(_emailEmisor, _emailPassword)
         };
+    }
+
+    private void ValidarConfiguracionSmtp()
+    {
+        var missingSettings = new List<string>();
+
+        if (string.IsNullOrWhiteSpace(_emailEmisor))
+            missingSettings.Add("CONFIGURACIONES:EMAIL");
+
+        if (string.IsNullOrWhiteSpace(_emailPassword))
+            missingSettings.Add("CONFIGURACIONES:PASSWORD");
+
+        if (string.IsNullOrWhiteSpace(_smtpHost))
+            missingSettings.Add("CONFIGURACIONES:HOST");
+
+        if (_smtpPort <= 0)
+            missingSettings.Add("CONFIGURACIONES:PUERTO");
+
+        if (missingSettings.Count > 0)
+        {
+            throw new InvalidOperationException(
+                $"La configuracion SMTP esta incompleta. Faltan: {string.Join(", ", missingSettings)}");
+        }
     }
 
     // Método para enviar correo de registro cliente (HTML simple y limpio)
