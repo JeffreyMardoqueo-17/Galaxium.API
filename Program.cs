@@ -34,6 +34,10 @@ using Microsoft.Extensions.Hosting;
 using Galaxium.Api.Services.service.StockMovements;
 using Galaxium.Api.Utils;
 using Microsoft.AspNetCore.DataProtection;
+using Microsoft.Extensions.Caching.StackExchangeRedis;
+using Galaxium.Api.Services.AI;
+using Galaxium.Api.Services.AI.Core;
+using Galaxium.Api.Services.AI.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -153,6 +157,28 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<StockEntryRules>();
 builder.Services.AddScoped<SaleRules>();
 builder.Services.AddScoped<SaleDetailsRules>();
+
+///===================================SERVICIOS AI COPILOT============================================
+// Redis para memoria conversacional
+builder.Services.AddStackExchangeRedisCache(options =>
+{
+    var redisConnection = builder.Configuration["Redis:ConnectionString"] 
+        ?? "localhost:6379";
+    options.Configuration = redisConnection;
+    options.InstanceName = "GalaxiumAI:";
+});
+
+// HttpClient para Gemini API
+builder.Services.AddHttpClient<Galaxium.Api.Services.AI.Core.GeminiProvider>();
+
+// AI Services
+builder.Services.AddSingleton<Galaxium.Api.Services.AI.Interfaces.IToolRegistry, Galaxium.Api.Services.AI.Core.ToolRegistry>();
+builder.Services.AddScoped<Galaxium.Api.Services.AI.Interfaces.IAIProvider, Galaxium.Api.Services.AI.Core.GeminiProvider>();
+builder.Services.AddScoped<Galaxium.Api.Services.AI.Interfaces.IConversationContextStore, Galaxium.Api.Services.AI.Context.RedisConversationContextStore>();
+builder.Services.AddScoped<Galaxium.Api.Services.AI.Interfaces.IToolExecutor, Galaxium.Api.Services.AI.Core.ToolExecutor>();
+builder.Services.AddScoped<Galaxium.Api.Services.AI.Interfaces.IIntentParser, Galaxium.Api.Services.AI.Core.PromptBuilder>();
+builder.Services.AddScoped<Galaxium.Api.Services.AI.Interfaces.IResponseFormatter, Galaxium.Api.Services.AI.Core.ResponseFormatter>();
+builder.Services.AddScoped<IAICopilotService, AICopilotService>();
 
 
 builder.Services.AddControllers()

@@ -32,9 +32,7 @@ public class SaleReportingService : ISaleReportingService
     public async Task<(byte[] Content, string FileName)> GenerateInvoicePdfAsync(int saleId)
     {
         if (saleId <= 0)
-        {
             throw new ArgumentException("El id de venta debe ser mayor a cero.");
-        }
 
         var sale = await _saleRepository.GetByIdAsync(saleId)
             ?? throw new InvalidOperationException($"No se encontró la venta con Id {saleId}.");
@@ -88,14 +86,10 @@ public class SaleReportingService : ISaleReportingService
         var end = (endDate ?? startDate!.Value).Date.AddDays(1).AddTicks(-1);
 
         if (start > end)
-        {
             throw new ArgumentException("La fecha de inicio no puede ser mayor que la fecha final.");
-        }
 
         if ((end - start).TotalDays > 3660)
-        {
             throw new InvalidOperationException("El rango permitido no puede superar 10 años.");
-        }
 
         return (start, end);
     }

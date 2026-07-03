@@ -63,7 +63,7 @@ namespace Galaxium.Api.Services
         // ===============================
         // GET BY ID
         // ===============================
-        public async Task<StockEntry> GetByIdStockEntryAsync(int id)
+        public async Task<StockEntry?> GetByIdStockEntryAsync(int id)
         {
             if (id <= 0)
                 throw new ArgumentException(
@@ -80,18 +80,13 @@ namespace Galaxium.Api.Services
             return stockEntry;
         }
 
-        // ===============================
-        // CREATE
-        // ===============================
         public async Task<StockEntry> CreateStockEntryAsync(
             StockEntry stockEntry)
         {
             if (stockEntry == null)
                 throw new ArgumentNullException(nameof(stockEntry));
 
-            // ===============================
-            // 1️⃣ Validaciones base
-            // ===============================
+            // validaciones
             _rules.ValidateQuantity(
                 Math.Abs(stockEntry.Quantity));
 
@@ -108,9 +103,7 @@ namespace Galaxium.Api.Services
                 throw new InvalidOperationException("El motivo es obligatorio para ajustes y devoluciones.");
             }
 
-            // ===============================
-            // 2️⃣ Obtener producto
-            // ===============================
+           //traer el producto
             var product =
                 await _productRepository
                     .GetProductByIdAsync(
@@ -119,13 +112,10 @@ namespace Galaxium.Api.Services
             _rules.ValidateProductExists(product);
 
             if (product == null)
-            {
+        
                 throw new InvalidOperationException("Producto no encontrado.");
-            }
-
-            // ===============================
-            // 4️⃣ Último lote
-            // ===============================
+        
+            // =ultimo lote
             var lastEntry =
                 await _stockEntryRepository
                     .GetLastEntryByProductIdAsync(
@@ -143,9 +133,7 @@ namespace Galaxium.Api.Services
                     lastEntry.UnitCost);
             }
 
-            // ===============================
-            // 5️⃣ Datos del lote
-            // ===============================
+            //datos dle lote
             stockEntry.CreatedAt = DateTime.UtcNow;
 
             stockEntry.RemainingQuantity =
@@ -153,32 +141,24 @@ namespace Galaxium.Api.Services
                     Math.Abs(stockEntry.Quantity));
 
             // ===============================
-            // 6️⃣ Reglas por tipo usando Factory Method
+            //  Reglas por tipo usando Factory Method
             // ===============================
             if (stockEntry.ReferenceType == StockReferenceType.Purchase)
-            {
                 _rules.ValidateExtremeQuantity(stockEntry.Quantity);
-            }
-
+        
             if (stockEntry.ReferenceType == StockReferenceType.Return && stockEntry.Quantity <= 0)
-            {
                 throw new InvalidOperationException("La devolución debe registrar cantidad positiva.");
-            }
 
             var movementHandler =
                 _stockMovementHandlerFactory.Create(stockEntry.ReferenceType);
             movementHandler.Apply(stockEntry, product);
 
-            // ===============================
-            // 7️⃣ Activación producto
-            // ===============================
+            //activacion del producto si tiene precio de venta y es mayor a cero
             product.IsActive =
                 product.SalePrice.HasValue &&
                 product.SalePrice > 0;
 
-            // ===============================
-            // 8️⃣ Persistencia
-            // ===============================
+            // persistencia - transaccion usando el patron unit of work
             var created = await _unitOfWork.ExecuteInTransactionAsync(
                 () => _stockEntryRepository.CreateStockEntryAsync(stockEntry, product));
 

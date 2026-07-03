@@ -4,9 +4,7 @@ namespace Galaxium.Api.Services.Rules
 {
     public class SaleRules
     {
-        // ==========================================
         // 1. Validar que la venta tenga productos
-        // ==========================================
         public void ValidateHasProducts(int totalItems)
         {
             if (totalItems <= 0)
@@ -14,9 +12,7 @@ namespace Galaxium.Api.Services.Rules
                     "No se puede registrar una venta sin productos.");
         }
 
-        // ==========================================
         // 2. Validar método de pago
-        // ==========================================
         public void ValidatePaymentMethod(int paymentMethodId)
         {
             if (paymentMethodId <= 0)
@@ -24,9 +20,7 @@ namespace Galaxium.Api.Services.Rules
                     "Debe seleccionar un método de pago válido.");
         }
 
-        // ==========================================
         // 3. Validar vendedor
-        // ==========================================
         public void ValidateSeller(int sellerUserId)
         {
             if (sellerUserId <= 0)
@@ -34,9 +28,7 @@ namespace Galaxium.Api.Services.Rules
                     "La venta debe tener un vendedor válido.");
         }
 
-        // ==========================================
         // 4. Validar subtotal
-        // ==========================================
         public void ValidateSubTotal(decimal subTotal)
         {
             if (subTotal <= 0)
@@ -44,9 +36,7 @@ namespace Galaxium.Api.Services.Rules
                     "El subtotal de la venta debe ser mayor a cero.");
         }
 
-        // ==========================================
         // 5. Validar descuento (monto o porcentaje)
-        // ==========================================
         public void ValidateDiscount(decimal discount, bool isPercentage = false)
         {
             if (discount < 0)
@@ -58,9 +48,7 @@ namespace Galaxium.Api.Services.Rules
                     "El descuento porcentual no puede exceder el 100%.");
         }
 
-        // ==========================================
         // 6. Descuento no puede exceder subtotal
-        // ==========================================
         public void ValidateDiscountLimit(decimal discount, decimal subTotal)
         {
             if (discount > subTotal)
@@ -68,9 +56,7 @@ namespace Galaxium.Api.Services.Rules
                     "El descuento no puede ser mayor al subtotal.");
         }
 
-        // ==========================================
         // 6.5 Calcular descuento en dinero desde porcentaje
-        // ==========================================
         public decimal CalculateDiscountAmount(decimal percentage, decimal subTotal)
         {
             if (percentage < 0 || percentage > 100)
@@ -80,17 +66,13 @@ namespace Galaxium.Api.Services.Rules
             return Math.Round(subTotal * (percentage / 100m), 2);
         }
 
-        // ==========================================
         // 7. Calcular total
-        // ==========================================
         public decimal CalculateTotal(decimal subTotal, decimal discount)
         {
             return subTotal - discount;
         }
 
-        // ==========================================
         // 8. Validar total final
-        // ==========================================
         public void ValidateTotal(decimal total)
         {
             if (total < 0)
@@ -98,17 +80,13 @@ namespace Galaxium.Api.Services.Rules
                     "El total de la venta no puede ser negativo.");
         }
 
-        // ==========================================
         // 9. Generar número de factura
-        // ==========================================
         public string GenerateInvoiceNumber()
         {
             return $"INV-{DateTime.UtcNow:yyyyMMddHHmmssfff}";
         }
 
-        // ==========================================
         // 10. Validar estado de venta
-        // ==========================================
         public void ValidateStatus(string status)
         {
             var validStatuses = new[] { "COMPLETED", "CANCELLED", "REFUNDED" };
@@ -118,9 +96,7 @@ namespace Galaxium.Api.Services.Rules
                     "Estado de venta inválido.");
         }
 
-        // ==========================================
         // 11. Validar monto pagado (para efectivo)
-        // ==========================================
         public void ValidateAmountPaid(decimal? amountPaid, decimal total, int paymentMethodId)
         {
             // Si el método de pago NO es efectivo (asumimos que efectivo es ID = 1), no validar
@@ -139,9 +115,7 @@ namespace Galaxium.Api.Services.Rules
                     $"El monto pagado ({amountPaid:C}) es insuficiente. El total es {total:C}.");
         }
 
-        // ==========================================
         // 12. Calcular vuelto
-        // ==========================================
         public decimal CalculateChange(decimal amountPaid, decimal total)
         {
             var change = amountPaid - total;
