@@ -59,10 +59,12 @@ namespace Galaxium.Api.Services.Rules
         // 6.5 Calcular descuento en dinero desde porcentaje
         public decimal CalculateDiscountAmount(decimal percentage, decimal subTotal)
         {
-            if (percentage < 0 || percentage > 100)
-                throw new InvalidOperationException(
-                    "El porcentaje de descuento debe estar entre 0 y 100.");
-
+            if (percentage <= 0 )
+                throw new ArgumentOutOfRangeException(
+                    "El porcentaje de descuento debe ser mayor a 0");
+            if (percentage > 100)
+                throw new ArgumentOutOfRangeException(
+                    "El porcentaje de descuento no puede exceder el 100%");
             return Math.Round(subTotal * (percentage / 100m), 2);
         }
 
