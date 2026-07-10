@@ -340,6 +340,29 @@ namespace Galaxium.Api.Migrations
                     b.ToTable("SaleDetail");
                 });
 
+            modelBuilder.Entity("Galaxium.API.Entities.Tenant", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<DateTime>("CreatedAt")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("timestamp without time zone")
+                        .HasDefaultValueSql("NOW()");
+
+                    b.Property<string>("Name")
+                        .IsRequired()
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Tenant");
+                });
+
             modelBuilder.Entity("Galaxium.API.Entities.User", b =>
                 {
                     b.Property<int>("Id")
@@ -366,6 +389,9 @@ namespace Galaxium.Api.Migrations
                     b.Property<int>("RoleId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Username")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -374,6 +400,8 @@ namespace Galaxium.Api.Migrations
                     b.HasKey("Id");
 
                     b.HasIndex("RoleId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("User");
                 });
@@ -744,7 +772,15 @@ namespace Galaxium.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Galaxium.API.Entities.Tenant", "Tenant")
+                        .WithMany("Users")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Role");
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("Galaxium.Api.Entities.PasswordResetCode", b =>
@@ -860,6 +896,11 @@ namespace Galaxium.Api.Migrations
             modelBuilder.Entity("Galaxium.API.Entities.Sale", b =>
                 {
                     b.Navigation("Details");
+                });
+
+            modelBuilder.Entity("Galaxium.API.Entities.Tenant", b =>
+                {
+                    b.Navigation("Users");
                 });
 
             modelBuilder.Entity("Galaxium.API.Entities.User", b =>

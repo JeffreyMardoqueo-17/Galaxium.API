@@ -180,7 +180,7 @@ CREATE TABLE IF NOT EXISTS "SaleDetail" (
     "Quantity" INT NOT NULL,
     "UnitPrice" DECIMAL(18,2) NOT NULL,
     "UnitCost" DECIMAL(18,2) NOT NULL,
-    "SubTotal" DECIMAL(18,2) GENERATED ALWAYS AS (Quantity * UnitPrice) STORED,
+    "SubTotal" DECIMAL(18,2) GENERATED ALWAYS AS ("Quantity" * "UnitPrice") STORED,
     "CreatedAt" TIMESTAMP NOT NULL DEFAULT NOW(),
     CONSTRAINT "FK_SaleDetail_Sale" FOREIGN KEY ("SaleId") REFERENCES "Sale"("Id") ON DELETE CASCADE,
     CONSTRAINT "FK_SaleDetail_Product" FOREIGN KEY ("ProductId") REFERENCES "Product"("Id")
@@ -226,7 +226,7 @@ CREATE INDEX IF NOT EXISTS "IX_PurchaseDetail_ProductId" ON "PurchaseDetail"("Pr
 
 -- =============================================
 -- TABLA: StockAlert
--- =============================================
+-- =============================================c
 CREATE TABLE IF NOT EXISTS "StockAlert" (
     "Id" SERIAL PRIMARY KEY,
     "ProductId" INT NOT NULL,
@@ -265,6 +265,6 @@ COMMENT ON TABLE "Product" IS 'Productos del inventario';
 COMMENT ON TABLE "PaymentMethod" IS 'Métodos de pago disponibles';
 COMMENT ON TABLE "Sale" IS 'Cabecera de ventas';
 COMMENT ON TABLE "SaleDetail" IS 'Detalle de productos vendidos';
-COMMENT ON COLUMN "Product.UnitOfMeasure" IS '1=Unit, 2=Box, 3=Kilo';
-COMMENT ON COLUMN "StockEntry.ReferenceType" IS '1=Purchase, 2=Sale, 3=Adjustment, 4=Return';
-COMMENT ON COLUMN "StockAlert.AlertType" IS '1=LowStock, 2=Exhausted, 3=NoMovement';
+COMMENT ON COLUMN "Product"."UnitOfMeasure" IS '1=Unit, 2=Box, 3=Kilo';
+COMMENT ON COLUMN "StockEntry"."ReferenceType" IS '1=Purchase, 2=Sale, 3=Adjustment, 4=Return';
+COMMENT ON COLUMN "StockAlert"."AlertType" IS '1=LowStock, 2=Exhausted, 3=NoMovement';
