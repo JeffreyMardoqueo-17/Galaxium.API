@@ -46,7 +46,13 @@ namespace Galaxium.Api.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Email")
+                        .IsUnique();
 
                     b.ToTable("Customer");
                 });
@@ -97,6 +103,9 @@ namespace Galaxium.Api.Migrations
                     b.Property<int>("Stock")
                         .HasColumnType("integer");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("UnitOfMeasure")
                         .IsRequired()
                         .HasMaxLength(30)
@@ -107,6 +116,11 @@ namespace Galaxium.Api.Migrations
                     b.HasIndex("CategoryId");
 
                     b.HasIndex("CreatedByUserId");
+
+                    b.HasIndex("TenantId", "CategoryId");
+
+                    b.HasIndex("TenantId", "SKU")
+                        .IsUnique();
 
                     b.ToTable("Product");
                 });
@@ -131,7 +145,13 @@ namespace Galaxium.Api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique();
 
                     b.ToTable("ProductCategory");
                 });
@@ -155,12 +175,17 @@ namespace Galaxium.Api.Migrations
                     b.Property<int>("ProductId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.Property<DateTime>("UploadedAt")
                         .HasColumnType("timestamp without time zone");
 
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("ProductPhoto");
                 });
@@ -189,6 +214,9 @@ namespace Galaxium.Api.Migrations
                     b.Property<DateTime?>("RevokedAt")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.Property<string>("Token")
                         .IsRequired()
                         .HasMaxLength(300)
@@ -199,7 +227,12 @@ namespace Galaxium.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("UserId");
+                    b.HasIndex("TenantId");
+
+                    b.HasIndex("Token")
+                        .IsUnique();
+
+                    b.HasIndex("UserId", "IsRevoked");
 
                     b.ToTable("RefreshToken");
                 });
@@ -217,26 +250,15 @@ namespace Galaxium.Api.Migrations
                         .HasMaxLength(50)
                         .HasColumnType("character varying(50)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
-                    b.ToTable("Role");
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique();
 
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            Name = "Administrator"
-                        },
-                        new
-                        {
-                            Id = 2,
-                            Name = "Cashier"
-                        },
-                        new
-                        {
-                            Id = 3,
-                            Name = "Supervisor"
-                        });
+                    b.ToTable("Role");
                 });
 
             modelBuilder.Entity("Galaxium.API.Entities.Sale", b =>
@@ -283,6 +305,9 @@ namespace Galaxium.Api.Migrations
                     b.Property<decimal>("SubTotal")
                         .HasColumnType("decimal(18,2)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("Total")
                         .HasColumnType("decimal(18,2)");
 
@@ -296,6 +321,10 @@ namespace Galaxium.Api.Migrations
                     b.HasIndex("PaymentMethodId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("TenantId", "SaleDate");
+
+                    b.HasIndex("TenantId", "Status");
 
                     b.ToTable("Sale");
                 });
@@ -325,6 +354,9 @@ namespace Galaxium.Api.Migrations
                         .HasColumnType("decimal(18,2)")
                         .HasComputedColumnSql("\"Quantity\" * \"UnitPrice\"", true);
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("UnitCost")
                         .HasColumnType("decimal(18,2)");
 
@@ -337,6 +369,8 @@ namespace Galaxium.Api.Migrations
 
                     b.HasIndex("SaleId");
 
+                    b.HasIndex("TenantId", "ProductId");
+
                     b.ToTable("SaleDetail");
                 });
 
@@ -348,17 +382,55 @@ namespace Galaxium.Api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<string>("Address")
+                        .HasMaxLength(300)
+                        .HasColumnType("character varying(300)");
+
+                    b.Property<string>("ContactEmail")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
                     b.Property<DateTime>("CreatedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("timestamp without time zone")
-                        .HasDefaultValueSql("NOW()");
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<bool>("IsActive")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("LogoUrl")
+                        .HasMaxLength(500)
+                        .HasColumnType("character varying(500)");
+
+                    b.Property<int>("MaxProducts")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("MaxUsers")
+                        .HasColumnType("integer");
 
                     b.Property<string>("Name")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("character varying(150)");
 
+                    b.Property<string>("PhoneNumber")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)");
+
+                    b.Property<string>("Slug")
+                        .HasMaxLength(150)
+                        .HasColumnType("character varying(150)");
+
+                    b.Property<DateTime?>("SubscriptionExpiresAt")
+                        .HasColumnType("timestamp without time zone");
+
+                    b.Property<DateTime>("UpdatedAt")
+                        .HasColumnType("timestamp without time zone");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("IsActive");
+
+                    b.HasIndex("Slug")
+                        .IsUnique();
 
                     b.ToTable("Tenant");
                 });
@@ -401,7 +473,8 @@ namespace Galaxium.Api.Migrations
 
                     b.HasIndex("RoleId");
 
-                    b.HasIndex("TenantId");
+                    b.HasIndex("TenantId", "Username")
+                        .IsUnique();
 
                     b.ToTable("User");
                 });
@@ -428,10 +501,15 @@ namespace Galaxium.Api.Migrations
                     b.Property<bool>("IsUsed")
                         .HasColumnType("boolean");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("TenantId");
 
                     b.HasIndex("UserId");
 
@@ -461,19 +539,15 @@ namespace Galaxium.Api.Migrations
                         .HasMaxLength(100)
                         .HasColumnType("character varying(100)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
-                    b.ToTable("PaymentMethod");
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique();
 
-                    b.HasData(
-                        new
-                        {
-                            Id = 1,
-                            CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc),
-                            Description = "Pago en efectivo",
-                            IsActive = true,
-                            Name = "Efectivo"
-                        });
+                    b.ToTable("PaymentMethod");
                 });
 
             modelBuilder.Entity("Galaxium.Api.Entities.Purchase", b =>
@@ -498,6 +572,9 @@ namespace Galaxium.Api.Migrations
                     b.Property<int>("SupplierId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("Total")
                         .HasColumnType("decimal(18,2)");
 
@@ -509,6 +586,8 @@ namespace Galaxium.Api.Migrations
                     b.HasIndex("SupplierId");
 
                     b.HasIndex("UserId");
+
+                    b.HasIndex("TenantId", "PurchaseDate");
 
                     b.ToTable("Purchase");
                 });
@@ -530,6 +609,9 @@ namespace Galaxium.Api.Migrations
                     b.Property<int>("Quantity")
                         .HasColumnType("integer");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("Total")
                         .HasColumnType("decimal(18,2)");
 
@@ -541,6 +623,8 @@ namespace Galaxium.Api.Migrations
                     b.HasIndex("ProductId");
 
                     b.HasIndex("PurchaseId");
+
+                    b.HasIndex("TenantId");
 
                     b.ToTable("PurchaseDetail");
                 });
@@ -575,9 +659,16 @@ namespace Galaxium.Api.Migrations
                     b.Property<DateTime?>("ResolvedAt")
                         .HasColumnType("timestamp without time zone");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
                     b.HasIndex("ProductId");
+
+                    b.HasIndex("TenantId", "IsActive");
+
+                    b.HasIndex("TenantId", "ProductId", "AlertType");
 
                     b.ToTable("StockAlert");
                 });
@@ -621,6 +712,9 @@ namespace Galaxium.Api.Migrations
                     b.Property<int?>("SupplierId")
                         .HasColumnType("integer");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.Property<decimal>("TotalCost")
                         .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("decimal(18,2)")
@@ -634,16 +728,18 @@ namespace Galaxium.Api.Migrations
 
                     b.HasKey("Id");
 
-                    b.HasIndex("ProductId");
-
                     b.HasIndex("SupplierId");
 
                     b.HasIndex("UserId");
 
+                    b.HasIndex("ProductId", "CreatedAt");
+
+                    b.HasIndex("TenantId", "ProductId");
+
                     b.ToTable("StockEntry");
                 });
 
-            modelBuilder.Entity("Galaxium.Api.Entities.Supplier", b =>
+            modelBuilder.Entity("Supplier", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -674,9 +770,26 @@ namespace Galaxium.Api.Migrations
                         .HasMaxLength(30)
                         .HasColumnType("character varying(30)");
 
+                    b.Property<int>("TenantId")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("TenantId", "Name")
+                        .IsUnique();
+
                     b.ToTable("Supplier");
+                });
+
+            modelBuilder.Entity("Galaxium.API.Entities.Customer", b =>
+                {
+                    b.HasOne("Galaxium.API.Entities.Tenant", "Tenant")
+                        .WithMany("Customers")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("Galaxium.API.Entities.Product", b =>
@@ -684,7 +797,7 @@ namespace Galaxium.Api.Migrations
                     b.HasOne("Galaxium.API.Entities.ProductCategory", "Category")
                         .WithMany("Products")
                         .HasForeignKey("CategoryId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Galaxium.API.Entities.User", "CreatedByUser")
@@ -693,9 +806,28 @@ namespace Galaxium.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("Galaxium.API.Entities.Tenant", "Tenant")
+                        .WithMany("Products")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Category");
 
                     b.Navigation("CreatedByUser");
+
+                    b.Navigation("Tenant");
+                });
+
+            modelBuilder.Entity("Galaxium.API.Entities.ProductCategory", b =>
+                {
+                    b.HasOne("Galaxium.API.Entities.Tenant", "Tenant")
+                        .WithMany("ProductCategories")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("Galaxium.API.Entities.ProductPhoto", b =>
@@ -706,11 +838,23 @@ namespace Galaxium.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Galaxium.API.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Product");
                 });
 
             modelBuilder.Entity("Galaxium.API.Entities.RefreshToken", b =>
                 {
+                    b.HasOne("Galaxium.API.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Galaxium.API.Entities.User", "User")
                         .WithMany("RefreshTokens")
                         .HasForeignKey("UserId")
@@ -720,16 +864,34 @@ namespace Galaxium.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Galaxium.API.Entities.Role", b =>
+                {
+                    b.HasOne("Galaxium.API.Entities.Tenant", "Tenant")
+                        .WithMany("Roles")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("Galaxium.API.Entities.Sale", b =>
                 {
                     b.HasOne("Galaxium.API.Entities.Customer", "Customer")
                         .WithMany("Sales")
-                        .HasForeignKey("CustomerId");
+                        .HasForeignKey("CustomerId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("Galaxium.Api.Entities.PaymentMethod", "PaymentMethod")
                         .WithMany()
                         .HasForeignKey("PaymentMethodId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Galaxium.API.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Galaxium.API.Entities.User", "User")
@@ -741,6 +903,8 @@ namespace Galaxium.Api.Migrations
                     b.Navigation("Customer");
 
                     b.Navigation("PaymentMethod");
+
+                    b.Navigation("Tenant");
 
                     b.Navigation("User");
                 });
@@ -759,6 +923,12 @@ namespace Galaxium.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Galaxium.API.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Product");
 
                     b.Navigation("Sale");
@@ -769,7 +939,7 @@ namespace Galaxium.Api.Migrations
                     b.HasOne("Galaxium.API.Entities.Role", "Role")
                         .WithMany("Users")
                         .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
                     b.HasOne("Galaxium.API.Entities.Tenant", "Tenant")
@@ -785,6 +955,12 @@ namespace Galaxium.Api.Migrations
 
             modelBuilder.Entity("Galaxium.Api.Entities.PasswordResetCode", b =>
                 {
+                    b.HasOne("Galaxium.API.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.HasOne("Galaxium.API.Entities.User", "User")
                         .WithMany()
                         .HasForeignKey("UserId")
@@ -794,11 +970,28 @@ namespace Galaxium.Api.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("Galaxium.Api.Entities.PaymentMethod", b =>
+                {
+                    b.HasOne("Galaxium.API.Entities.Tenant", "Tenant")
+                        .WithMany("PaymentMethods")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
+                });
+
             modelBuilder.Entity("Galaxium.Api.Entities.Purchase", b =>
                 {
-                    b.HasOne("Galaxium.Api.Entities.Supplier", "Supplier")
+                    b.HasOne("Supplier", "Supplier")
                         .WithMany("Purchases")
                         .HasForeignKey("SupplierId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("Galaxium.API.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
@@ -809,6 +1002,8 @@ namespace Galaxium.Api.Migrations
                         .IsRequired();
 
                     b.Navigation("Supplier");
+
+                    b.Navigation("Tenant");
 
                     b.Navigation("User");
                 });
@@ -827,6 +1022,12 @@ namespace Galaxium.Api.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
+                    b.HasOne("Galaxium.API.Entities.Tenant", null)
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
                     b.Navigation("Product");
 
                     b.Navigation("Purchase");
@@ -835,7 +1036,7 @@ namespace Galaxium.Api.Migrations
             modelBuilder.Entity("Galaxium.Api.Entities.StockAlert", b =>
                 {
                     b.HasOne("Galaxium.API.Entities.Product", "Product")
-                        .WithMany()
+                        .WithMany("StockAlerts")
                         .HasForeignKey("ProductId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -851,10 +1052,16 @@ namespace Galaxium.Api.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("Galaxium.Api.Entities.Supplier", "Supplier")
+                    b.HasOne("Supplier", "Supplier")
                         .WithMany("StockEntries")
                         .HasForeignKey("SupplierId")
                         .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("Galaxium.API.Entities.Tenant", "Tenant")
+                        .WithMany()
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
 
                     b.HasOne("Galaxium.API.Entities.User", "User")
                         .WithMany("StockEntries")
@@ -866,7 +1073,20 @@ namespace Galaxium.Api.Migrations
 
                     b.Navigation("Supplier");
 
+                    b.Navigation("Tenant");
+
                     b.Navigation("User");
+                });
+
+            modelBuilder.Entity("Supplier", b =>
+                {
+                    b.HasOne("Galaxium.API.Entities.Tenant", "Tenant")
+                        .WithMany("Suppliers")
+                        .HasForeignKey("TenantId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("Tenant");
                 });
 
             modelBuilder.Entity("Galaxium.API.Entities.Customer", b =>
@@ -879,6 +1099,8 @@ namespace Galaxium.Api.Migrations
                     b.Navigation("Photos");
 
                     b.Navigation("SaleDetails");
+
+                    b.Navigation("StockAlerts");
 
                     b.Navigation("StockEntries");
                 });
@@ -900,6 +1122,18 @@ namespace Galaxium.Api.Migrations
 
             modelBuilder.Entity("Galaxium.API.Entities.Tenant", b =>
                 {
+                    b.Navigation("Customers");
+
+                    b.Navigation("PaymentMethods");
+
+                    b.Navigation("ProductCategories");
+
+                    b.Navigation("Products");
+
+                    b.Navigation("Roles");
+
+                    b.Navigation("Suppliers");
+
                     b.Navigation("Users");
                 });
 
@@ -919,7 +1153,7 @@ namespace Galaxium.Api.Migrations
                     b.Navigation("Details");
                 });
 
-            modelBuilder.Entity("Galaxium.Api.Entities.Supplier", b =>
+            modelBuilder.Entity("Supplier", b =>
                 {
                     b.Navigation("Purchases");
 

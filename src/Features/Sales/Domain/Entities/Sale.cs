@@ -3,12 +3,14 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Galaxium.Api.Entities;
+using Galaxium.Api.Shared.MultiTenant;
 
 namespace Galaxium.API.Entities
 {
-    public class Sale
+    public class Sale : ITenantEntity
     {
         public int Id { get; set; }
+        public int TenantId { get; set; }
 
         /* ============================
            FOREIGN KEYS
@@ -45,6 +47,7 @@ namespace Galaxium.API.Entities
         /* ============================
            NAVIGATION PROPERTIES
         ============================ */
+        public Tenant Tenant { get; set; } = null!;
         public Customer? Customer { get; set; }
         public User User { get; set; } = null!;
         public PaymentMethod PaymentMethod { get; set; } = null!;

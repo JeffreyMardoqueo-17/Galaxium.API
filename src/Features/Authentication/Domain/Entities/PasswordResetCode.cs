@@ -2,13 +2,15 @@
 using System;
 using System.ComponentModel.DataAnnotations;
 using Galaxium.API.Entities;
+using Galaxium.Api.Shared.MultiTenant;
 
 namespace Galaxium.Api.Entities
 {
-    public class PasswordResetCode
+    public class PasswordResetCode : ITenantEntity
     {
         public int Id { get; set; }
         public int UserId { get; set; }
+        public int TenantId { get; set; }
 
         /// <summary>SHA-256 hash del código de 6 dígitos.</summary>
         [Required]

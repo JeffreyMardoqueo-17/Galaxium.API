@@ -1,8 +1,9 @@
 using System;
+using Galaxium.Api.Shared.MultiTenant;
 
 namespace Galaxium.API.Entities
 {
-    public class SaleDetail
+    public class SaleDetail : ITenantEntity
     {
         public int Id { get; set; }
 
@@ -11,6 +12,7 @@ namespace Galaxium.API.Entities
         ============================ */
         public int SaleId { get; set; }
         public int ProductId { get; set; }
+        public int TenantId { get; set; }
 
         /* ============================
            PRODUCT DATA

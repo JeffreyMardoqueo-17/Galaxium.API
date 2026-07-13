@@ -38,6 +38,7 @@
 
   <ItemGroup>
     <Compile Include="src\**\*.cs" />
+    <Compile Include="Migrations\**\*.cs" />
   </ItemGroup>
 
 </Project>

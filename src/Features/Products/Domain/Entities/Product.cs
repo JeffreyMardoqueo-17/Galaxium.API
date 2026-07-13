@@ -4,12 +4,14 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Galaxium.Api.Entities;
 using Galaxium.Api.Enums;
+using Galaxium.Api.Shared.MultiTenant;
 
 namespace Galaxium.API.Entities
 {
-    public class Product
+    public class Product : ITenantEntity
     {
         public int Id { get; set; }
+        public int TenantId { get; set; }
         public int CategoryId { get; set; }
         public int CreatedByUserId { get; set; }
 
@@ -36,11 +38,13 @@ namespace Galaxium.API.Entities
         public DateTime CreatedAt { get; set; }
 
         // Navegaciones
+        public Tenant Tenant { get; set; } = null!;
         public ProductCategory Category { get; set; } = null!;
         public User CreatedByUser { get; set; } = null!;
         public ICollection<SaleDetail> SaleDetails { get; set; } = new List<SaleDetail>();
         public ICollection<ProductPhoto> Photos { get; set; } = new List<ProductPhoto>();
         public ICollection<StockEntry> StockEntries { get; set; } = new List<StockEntry>();
+        public ICollection<StockAlert> StockAlerts { get; set; } = new List<StockAlert>();
     }
 
 }

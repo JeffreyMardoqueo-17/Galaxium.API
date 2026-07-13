@@ -4,13 +4,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using Galaxium.Api.Shared.MultiTenant;
 
 namespace Galaxium.API.Entities
 {
-   public class RefreshToken
+   public class RefreshToken : ITenantEntity
    {
        public int Id { get; set; }
        public int UserId { get; set; }
+       public int TenantId { get; set; }
 
        [Required]
        [MaxLength(300)]
@@ -25,8 +27,6 @@ namespace Galaxium.API.Entities
        public string? ReplacedByToken { get; set; }
 
        public User User { get; set; } = null!;
-   }
-
-
+    }
 }
 

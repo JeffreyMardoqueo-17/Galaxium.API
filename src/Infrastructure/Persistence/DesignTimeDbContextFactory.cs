@@ -7,8 +7,8 @@ public class DesignTimeDbContextFactory : IDesignTimeDbContextFactory<GalaxiumDb
 {
     public GalaxiumDbContext CreateDbContext(string[] args)
     {
-        var connectionString =
-            "Host=localhost;Port=5432;Database=galaxium_bd;Username=postgres;Password=galaxium_dev";
+        var connectionString = Environment.GetEnvironmentVariable("ConnectionStrings__DefaultConnection")
+            ?? "Host=localhost;Port=5432;Database=galaxium_erp;Username=galaxium;Password=GalaxiumDev2026!";
 
         var optionsBuilder = new DbContextOptionsBuilder<GalaxiumDbContext>();
         optionsBuilder.UseNpgsql(connectionString);

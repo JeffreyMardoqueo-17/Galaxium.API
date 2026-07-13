@@ -4,13 +4,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using System.ComponentModel.DataAnnotations;
+using Galaxium.Api.Shared.MultiTenant;
 
 namespace Galaxium.API.Entities
 {
-    public class ProductPhoto
+    public class ProductPhoto : ITenantEntity
     {
         public int Id { get; set; }
         public int ProductId { get; set; }
+        public int TenantId { get; set; }
 
         [Required]
         [MaxLength(300)]

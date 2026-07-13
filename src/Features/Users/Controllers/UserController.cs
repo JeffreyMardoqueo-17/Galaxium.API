@@ -1,7 +1,7 @@
 using System.Security.Claims;
 using System.Threading.Tasks;
 using AutoMapper;
-using Galaxium.API.Data;
+using Galaxium.Api.Features.Tenants.Services;
 using Galaxium.Api.Services.Interfaces;
 using Galaxium.API.DTOs.Users;
 using Galaxium.API.Entities;
@@ -27,7 +27,7 @@ namespace Galaxium.Api.Controllers
         private readonly IMapper _mapper;
         private readonly IPasswordResetService _passwordResetService;
         private readonly IWebHostEnvironment _environment;
-        private readonly GalaxiumDbContext _dbContext;
+        private readonly ITenantService _tenantService;
 
         public UserController(
             IUserAuthService userAuthService,
@@ -35,25 +35,24 @@ namespace Galaxium.Api.Controllers
             IMapper mapper,
             IPasswordResetService passwordResetService,
             IWebHostEnvironment environment,
-            GalaxiumDbContext dbContext)
+            ITenantService tenantService)
         {
             _userAuthService = userAuthService;
             _userService = userService;
             _mapper = mapper;
             _passwordResetService = passwordResetService;
             _environment = environment;
-            _dbContext = dbContext;
+            _tenantService = tenantService;
         }
 
         // POST: api/User/first-register
         /// <summary>
-        /// Permite crear el primer usuario administrador SOLO si no existe ningún usuario en la base. Después queda inservible (403).
+        /// Permite crear el primer tenant y su usuario administrador SOLO si no existe ningún usuario en la base.
         /// </summary>
         [HttpPost("first-register")]
         [AllowAnonymous]
         public async Task<IActionResult> FirstRegister([FromBody] FirstRegisterRequest request)
         {
-            // Verifica si ya existe algún usuario
             if (await _userService.AnyUserExistsAsync())
                 return StatusCode(403, "Ya existe al menos un usuario registrado. Este endpoint solo puede usarse una vez.");
 
@@ -69,42 +68,34 @@ namespace Galaxium.Api.Controllers
             if (string.IsNullOrWhiteSpace(request.Password))
                 return BadRequest("Password is required.");
 
-            await using var transaction = await _dbContext.Database.BeginTransactionAsync();
+            // Crear Tenant usando el servicio dedicado (no DbContext directamente)
+            var tenant = await _tenantService.CreateAsync(
+                request.TenantName.Trim(),
+                null,
+                null,
+                null,
+                null,
+                50,
+                1000);
 
-            var tenant = new Tenant
-            {
-                Name = request.TenantName.Trim(),
-                CreatedAt = DateTime.UtcNow
-            };
-
-            _dbContext.Tenant.Add(tenant);
-            await _dbContext.SaveChangesAsync();
-
-            // DTO -> Entity (AutoMapper)
+            // Crear usuario administrador
             var newUser = _mapper.Map<User>(new UserCreateRequest(
                 request.FullName,
                 request.Username,
                 request.Password,
-                1
-            ));
+                1));
 
             newUser.RoleId = 1;
             newUser.TenantId = tenant.Id;
 
-            var createdUser = await _userAuthService.CreateUserAsync(
-                newUser,
-                request.Password
-            );
-
-            await transaction.CommitAsync();
+            var createdUser = await _userAuthService.CreateUserAsync(newUser, request.Password);
 
             var response = _mapper.Map<UserResponse>(createdUser);
 
             return CreatedAtAction(
                 nameof(GetById),
                 new { userId = response.Id },
-                response
-            );
+                response);
         }
 
         // POST: api/User/register
@@ -118,34 +109,26 @@ namespace Galaxium.Api.Controllers
             if (!TryGetTenantIdFromClaims(out var tenantId))
                 return Unauthorized("Token inválido: no contiene TenantId");
 
-            //DTO -> Entity (AutoMapper)
             var newUser = _mapper.Map<User>(request);
             newUser.TenantId = tenantId;
 
-            var createdUser = await _userAuthService.CreateUserAsync(
-                newUser,
-                request.Password
-            );
+            var createdUser = await _userAuthService.CreateUserAsync(newUser, request.Password);
 
-            //Entity -> DTO (AutoMapper)
             var response = _mapper.Map<UserResponse>(createdUser);
 
             return CreatedAtAction(
                 nameof(GetById),
                 new { userId = response.Id },
-                response
-            );
+                response);
         }
 
-        // POST: api/User/login
         // POST: api/User/login
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginRequest request)
         {
             var authResult = await _userAuthService.AuthenticateUserAsync(
                 request.Username,
-                request.Password
-            );
+                request.Password);
 
             if (authResult == null)
                 return Unauthorized("Invalid username or password.");
@@ -154,34 +137,24 @@ namespace Galaxium.Api.Controllers
             SetAuthCookies(accessToken, refreshToken);
 
             var userResponse = _mapper.Map<UserResponse>(user);
-            return Ok(new
-            {
-                user = userResponse
-            });
-
+            return Ok(new { user = userResponse });
         }
-
 
         [HttpGet("me")]
         [Authorize]
         public async Task<IActionResult> Me()
         {
             var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
-
             if (userIdClaim == null)
                 return Unauthorized("Token inválido: no contiene UserId");
 
             var userId = int.Parse(userIdClaim.Value);
-
             var user = await _userService.GetUserByIdAsync(userId);
-
-            if (user == null)
-                return NotFound();
+            if (user == null) return NotFound();
 
             var response = _mapper.Map<UserResponse>(user);
             return Ok(response);
         }
-
 
         [HttpPost("refresh")]
         public async Task<IActionResult> Refresh()
@@ -192,20 +165,15 @@ namespace Galaxium.Api.Controllers
             if (string.IsNullOrEmpty(refreshToken))
                 return Unauthorized();
 
-            var result = await _userAuthService.RefreshTokenAsync(
-                accessToken,
-                refreshToken
-            );
-
-            if (result == null)
-                return Unauthorized();
+            var result = await _userAuthService.RefreshTokenAsync(accessToken, refreshToken);
+            if (result == null) return Unauthorized();
 
             var (newAccessToken, newRefreshToken) = result.Value;
-
             SetAuthCookies(newAccessToken, newRefreshToken);
 
             return Ok();
         }
+
         [HttpPost("logout")]
         [Authorize]
         public async Task<IActionResult> Logout()
@@ -217,31 +185,30 @@ namespace Galaxium.Api.Controllers
             }
 
             DeleteAuthCookies();
-
             return Ok();
         }
 
-
         // GET: api/User/{userId}
-         [HttpGet("{userId:int}")]
+        [HttpGet("{userId:int}")]
         [Authorize]
         public async Task<IActionResult> GetById(int userId)
         {
             var user = await _userService.GetUserByIdAsync(userId);
-            if (user == null)
-                return NotFound();
+            if (user == null) return NotFound();
 
-            // Entity -> DTO (AutoMapper)
+            // MultiTenant: ensure the user belongs to the current tenant
+            if (!TryGetTenantIdFromClaims(out var currentTenantId) || user.TenantId != currentTenantId)
+                return Forbid();
+
             var response = _mapper.Map<UserResponse>(user);
             return Ok(response);
         }
+
         [HttpGet]
         [Authorize(Policy = GalaxiumPolicyNames.AdminOrSupervisor)]
         public async Task<IActionResult> GetAllUsers()
         {
             var users = await _userService.GetAllUsersAsync();
-
-            // Entity List -> DTO List (AutoMapper)
             var response = _mapper.Map<List<UserResponse>>(users);
             return Ok(response);
         }
@@ -268,7 +235,6 @@ namespace Galaxium.Api.Controllers
         [HttpPost("forgot-password")]
         public async Task<IActionResult> ForgotPassword([FromBody] ForgotPasswordRequest request)
         {
-            // Siempre retorna 200 para no revelar si el email existe
             await _passwordResetService.SendResetCodeAsync(request.Email);
             return Ok(new { message = "Si el correo está registrado, recibirás un código de verificación." });
         }
@@ -294,14 +260,12 @@ namespace Galaxium.Api.Controllers
             Response.Cookies.Append(
                 AccessTokenCookieName,
                 accessToken,
-                BuildCookieOptions(DateTime.UtcNow.AddHours(12))
-            );
+                BuildCookieOptions(DateTime.UtcNow.AddHours(12)));
 
             Response.Cookies.Append(
                 RefreshTokenCookieName,
                 refreshToken,
-                BuildCookieOptions(DateTime.UtcNow.AddDays(30))
-            );
+                BuildCookieOptions(DateTime.UtcNow.AddDays(30)));
         }
 
         private void DeleteAuthCookies()

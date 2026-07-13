@@ -3,10 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using Galaxium.Api.Entities;
+using Galaxium.Api.Shared.MultiTenant;
 
 namespace Galaxium.API.Entities
 {
-    public class User
+    public class User : ITenantEntity
     {
         public int Id { get; set; }
         public int TenantId { get; set; }

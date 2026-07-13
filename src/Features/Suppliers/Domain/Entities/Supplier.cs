@@ -1,10 +1,13 @@
-namespace Galaxium.Api.Entities;
+using Galaxium.Api.Entities;
+using Galaxium.Api.Shared.MultiTenant;
+using Galaxium.API.Entities;
 
 using System.ComponentModel.DataAnnotations;
 
-public class Supplier
+public class Supplier : ITenantEntity
 {
     public int Id { get; set; }
+    public int TenantId { get; set; }
 
     [Required]
     [MaxLength(150)]
@@ -22,6 +25,7 @@ public class Supplier
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+    public Tenant Tenant { get; set; } = null!;
     public ICollection<Purchase> Purchases { get; set; } = new List<Purchase>();
     public ICollection<StockEntry> StockEntries { get; set; } = new List<StockEntry>();
 }

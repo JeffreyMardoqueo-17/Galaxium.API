@@ -1,11 +1,13 @@
 ﻿using Galaxium.Api.Enums;
 using Galaxium.API.Entities;
+using Galaxium.Api.Shared.MultiTenant;
 
 namespace Galaxium.Api.Entities
 {
-    public class StockEntry
+    public class StockEntry : ITenantEntity
     {
         public int Id { get; set; }
+        public int TenantId { get; set; }
 
         // ==========================
         // RELACIONES
@@ -15,6 +17,8 @@ namespace Galaxium.Api.Entities
 
         public int UserId { get; set; }
         public User User { get; set; } = null!;
+
+        public Tenant Tenant { get; set; } = null!;
 
         // ==========================
         // INVENTARIO
