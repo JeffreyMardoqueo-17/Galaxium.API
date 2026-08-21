@@ -7,6 +7,7 @@ namespace Galaxium.API.DTOs.Users
 {
      public record UserLoginRequest(
         string Username,
-        string Password
+        string Password,
+        string TenantSlug
     );
 }

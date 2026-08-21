@@ -128,7 +128,8 @@ namespace Galaxium.Api.Controllers
         {
             var authResult = await _userAuthService.AuthenticateUserAsync(
                 request.Username,
-                request.Password);
+                request.Password,
+                request.TenantSlug);
 
             if (authResult == null)
                 return Unauthorized("Invalid username or password.");

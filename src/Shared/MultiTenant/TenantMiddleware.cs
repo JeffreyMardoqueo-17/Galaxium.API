@@ -41,10 +41,12 @@ public class TenantMiddleware
     {
         var path = context.Request.Path.Value ?? string.Empty;
 
-        return path.Contains("/api/User/first-register", StringComparison.OrdinalIgnoreCase)
+        return path.Contains("/api/Tenant/onboard", StringComparison.OrdinalIgnoreCase)
+            || path.Contains("/api/User/first-register", StringComparison.OrdinalIgnoreCase)
             || path.Contains("/api/User/login", StringComparison.OrdinalIgnoreCase)
             || path.Contains("/api/User/forgot-password", StringComparison.OrdinalIgnoreCase)
             || path.Contains("/api/User/reset-password", StringComparison.OrdinalIgnoreCase)
+            || path.Contains("/api/User/refresh", StringComparison.OrdinalIgnoreCase)
             || path.Contains("/swagger", StringComparison.OrdinalIgnoreCase)
             || path.Contains("/health", StringComparison.OrdinalIgnoreCase);
     }

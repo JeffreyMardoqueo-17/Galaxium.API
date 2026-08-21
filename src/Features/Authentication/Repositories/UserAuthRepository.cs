@@ -32,16 +32,18 @@ namespace Galaxium.API.Repository.Repos
                 .FirstAsync(u => u.Id == newUser.Id);
         }
 
-        public async Task<User?> AuthenticateUserAsync(string username)
+        public async Task<User?> AuthenticateUserAsync(string username, string tenantSlug)
         {
             return await _context.User
-                .Include(u => u.Role)  // <== Carga explícita del rol
+                .IgnoreQueryFilters()
+                .Include(u => u.Role)
                 .Include(u => u.Tenant)
-                .FirstOrDefaultAsync(u => u.Username == username);
+                .FirstOrDefaultAsync(u => u.Username == username && u.Tenant.Slug == tenantSlug);
         }
         public async Task<IEnumerable<RefreshToken>> GetActiveTokensByUserIdAsync(int userId)
         {
             return await _context.RefreshToken
+                .IgnoreQueryFilters()
                 .Where(t => t.UserId == userId && !t.IsRevoked && t.ExpiresAt > DateTime.UtcNow)
                 .ToListAsync();
         }

@@ -2,6 +2,7 @@ using Galaxium.Api.Features.Tenants.Contracts.Requests;
 using Galaxium.Api.Features.Tenants.Contracts.Responses;
 using Galaxium.Api.Features.Tenants.Services;
 using Galaxium.Api.Utils;
+using Galaxium.API.Common;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
@@ -13,10 +14,36 @@ namespace Galaxium.Api.Features.Tenants.Controllers;
 public class TenantController : ControllerBase
 {
     private readonly ITenantService _tenantService;
+    private readonly ITenantOnboardingService _onboardingService;
 
-    public TenantController(ITenantService tenantService)
+    public TenantController(
+        ITenantService tenantService,
+        ITenantOnboardingService onboardingService)
     {
         _tenantService = tenantService;
+        _onboardingService = onboardingService;
+    }
+
+    [HttpPost("onboard")]
+    [AllowAnonymous]
+    [ProducesResponseType(typeof(TenantOnboardingResponse), StatusCodes.Status201Created)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(typeof(ErrorResponse), StatusCodes.Status409Conflict)]
+    public async Task<ActionResult<TenantOnboardingResponse>> Onboard(
+        [FromBody] TenantOnboardingRequest request)
+    {
+        try
+        {
+            var result = await _onboardingService.OnboardAsync(request);
+            return CreatedAtAction(
+                nameof(GetById),
+                new { tenantId = result.TenantId },
+                result);
+        }
+        catch (BusinessException ex)
+        {
+            return StatusCode(ex.StatusCode, new ErrorResponse(ex.Message));
+        }
     }
 
     [HttpGet]
@@ -105,3 +132,5 @@ public class TenantController : ControllerBase
             t.MaxProducts);
     }
 }
+
+public record ErrorResponse(string Message);

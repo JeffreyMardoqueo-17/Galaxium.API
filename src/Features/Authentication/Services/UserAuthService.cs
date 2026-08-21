@@ -30,15 +30,17 @@ namespace Galaxium.API.Services.Service
             return await _userRepository.CreateUserAsync(newUser);
         }
 
-        public async Task<(User user, string accessToken, string refreshToken)?> AuthenticateUserAsync(string username, string password)
+        public async Task<(User user, string accessToken, string refreshToken)?> AuthenticateUserAsync(string username, string password, string tenantSlug)
         {
-            var user = await _userRepository.AuthenticateUserAsync(username);
+            var user = await _userRepository.AuthenticateUserAsync(username, tenantSlug);
             if (user == null) return null;
 
             if (!user.IsActive) return null;
 
             bool isValid = PasswordHasher.VerifyPassword(password, user.PasswordHash);
             if (!isValid) return null;
+
+            Galaxium.Api.Shared.MultiTenant.TenantContext.SetTenantId(user.TenantId);
 
             var accessToken = _jwtTokenService.GenerateAccessToken(user);
 
@@ -96,6 +98,7 @@ namespace Galaxium.API.Services.Service
 
             // Crear nuevos
             var user = storedToken.User!;
+            Galaxium.Api.Shared.MultiTenant.TenantContext.SetTenantId(user.TenantId);
             var newAccessToken = _jwtTokenService.GenerateAccessToken(user);
             var newRefreshToken = _jwtTokenService.GenerateRefreshToken(user.Id);
 

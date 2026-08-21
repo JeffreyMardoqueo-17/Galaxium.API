@@ -25,6 +25,7 @@ namespace Galaxium.API.Repository.Repos
         public async Task<RefreshToken?> GetByTokenAsync(string token)
         {
             return await _context.RefreshToken
+                .IgnoreQueryFilters()
                 .Include(rt => rt.User)
                 .ThenInclude(u => u!.Role)
                 .FirstOrDefaultAsync(rt => rt.Token == token);
@@ -40,6 +41,7 @@ namespace Galaxium.API.Repository.Repos
         public async Task<IEnumerable<RefreshToken>> GetActiveTokensByUserIdAsync(int userId)
         {
             return await _context.RefreshToken
+                .IgnoreQueryFilters()
                 .Where(rt => rt.UserId == userId && !rt.IsRevoked && rt.ExpiresAt > DateTime.UtcNow)
                 .ToListAsync();
         }

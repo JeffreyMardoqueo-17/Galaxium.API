@@ -180,6 +180,7 @@ namespace Galaxium.API.Data
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasIndex(u => new { u.TenantId, u.Username }).IsUnique();
+                entity.HasIndex(u => new { u.TenantId, u.Email }).IsUnique().HasFilter(null);
 
                 entity.HasOne(u => u.Tenant)
                     .WithMany(t => t.Users)
@@ -520,9 +521,15 @@ namespace Galaxium.API.Data
         {
             var parameter = Expression.Parameter(typeof(T), "e");
             var tenantIdProperty = Expression.Property(parameter, nameof(ITenantEntity.TenantId));
-            var currentTenantId = Expression.Property(
-                null,
-                typeof(TenantContext).GetProperty(nameof(TenantContext.TenantId))!);
+
+            // Use TryGetTenantId() to avoid exceptions when TenantContext is not initialized.
+            // Fallback to -1 (sentinel) so the filter returns no rows instead of throwing.
+            var tryGetTenantIdMethod = typeof(TenantContext).GetMethod(nameof(TenantContext.TryGetTenantId))!;
+            var callTryGet = Expression.Call(null, tryGetTenantIdMethod);
+            var nullableTenantId = Expression.Convert(callTryGet, typeof(int?));
+            var fallbackValue = Expression.Constant(-1, typeof(int));
+            var currentTenantId = Expression.Coalesce(nullableTenantId, fallbackValue);
+
             var comparison = Expression.Equal(tenantIdProperty, currentTenantId);
             var lambda = Expression.Lambda(comparison, parameter);
 

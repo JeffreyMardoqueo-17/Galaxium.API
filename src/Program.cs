@@ -89,6 +89,10 @@ builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<ITenantRepository, TenantRepository>();
 builder.Services.AddScoped<ITenantService, TenantService>();
 
+// Tenant Onboarding
+builder.Services.AddScoped<ITenantOnboardingRepository, TenantOnboardingRepository>();
+builder.Services.AddScoped<ITenantOnboardingService, TenantOnboardingService>();
+
 // Auth & Users
 builder.Services.AddScoped<IRoleRespository, RolRepository>();
 builder.Services.AddScoped<IRoleService, RoleService>();

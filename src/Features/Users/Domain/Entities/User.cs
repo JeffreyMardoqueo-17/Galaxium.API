@@ -21,6 +21,9 @@ namespace Galaxium.API.Entities
         [MaxLength(50)]
         public string Username { get; set; } = null!;
 
+        [MaxLength(150)]
+        public string? Email { get; set; }
+
         [Required]
         public string PasswordHash { get; set; } = null!;
 
