@@ -241,6 +241,7 @@ namespace Galaxium.Api.Migrations
                     PaymentMethodId = table.Column<int>(type: "integer", nullable: false),
                     SubTotal = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     Discount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
+                    IsDiscountPercentage = table.Column<bool>(type: "boolean", nullable: false),
                     AmountPaid = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     ChangeAmount = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
                     Total = table.Column<decimal>(type: "numeric(18,2)", nullable: false),
@@ -418,6 +419,11 @@ namespace Galaxium.Api.Migrations
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
+
+            migrationBuilder.InsertData(
+                table: "PaymentMethod",
+                columns: new[] { "Id", "CreatedAt", "Description", "IsActive", "Name" },
+                values: new object[] { 1, new DateTime(2026, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc), "Pago en efectivo", true, "Efectivo" });
 
             migrationBuilder.InsertData(
                 table: "Role",

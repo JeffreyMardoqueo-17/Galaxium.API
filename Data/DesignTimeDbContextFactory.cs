@@ -9,7 +9,7 @@ public class DesignTimeDbContextFactory
     {
         var connectionString = args.Length > 0 
             ? args[0] 
-            : "Host=localhost;Port=5432;Database=galaxium_bd;Username=sa;Password=galaxium_dev";
+            : "Host=localhost;Port=5433;Database=galaxium_bd;Username=sa;Password=galaxium_dev";
 
         var optionsBuilder = new Microsoft.EntityFrameworkCore.DbContextOptionsBuilder<GalaxiumDbContext>();
         optionsBuilder.UseNpgsql(connectionString);

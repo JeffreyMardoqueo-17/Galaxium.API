@@ -12,8 +12,8 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Galaxium.Api.Migrations
 {
     [DbContext(typeof(GalaxiumDbContext))]
-    [Migration("20260330135240_AddIsDiscountPercentageToSale")]
-    partial class AddIsDiscountPercentageToSale
+    [Migration("20260823163433_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
